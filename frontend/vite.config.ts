@@ -2,7 +2,16 @@ import { defineConfig } from 'vite';
 import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig({
-  plugins: [tailwindcss()],
+  plugins: [tailwindcss(), {
+    name: 'page-paths',
+    configureServer(server) {
+      server.middlewares.use((req, _res, next) => {
+        req.url = req.url?.replace(/^\/(catalog|explorer|signin)\/?(?=\?|$)/, '/$1.html');
+        next();
+      });
+    },
+  }],
+  build: { rollupOptions: { input: ['index.html', 'catalog.html', 'explorer.html', 'signin.html'] } },
   server: {
     proxy: {
       '/health': 'http://localhost:8000',
