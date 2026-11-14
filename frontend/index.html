@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="en" class="scroll-smooth">
 <head>
+  <link rel="stylesheet" href="/src/styles.css" />
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Orbit9: Sky Explorer</title>
@@ -15,7 +16,7 @@
        an id here, update the matching TypeScript file too. -->
 
   <!-- INTRO GUIDE: a dialog shown before the homepage. Behaviour lives in src/guide/guide.ts. -->
-  <div id="guide-modal" role="dialog" aria-modal="true" aria-labelledby="guide-heading"
+  <div id="guide-modal" hidden role="dialog" aria-modal="true" aria-labelledby="guide-heading"
        class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 p-4 backdrop-blur-md sm:p-6">
     <div class="card relative max-h-[92vh] w-full max-w-5xl animate-modal-enter overflow-y-auto border-emerald-400/30 bg-slate-900 p-6 shadow-2xl shadow-emerald-950/40 sm:p-8">
 
@@ -121,13 +122,14 @@
 
   <!-- HOMEPAGE. Made `inert` (not clickable or focusable) while the guide is open. -->
   <div id="app" class="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
-    <header class="mb-8 flex items-center justify-between">
+    <header class="mb-8 flex flex-wrap gap-3 items-center justify-between">
       <a href="/" class="font-display text-lg font-semibold text-white">Orbit<span class="text-emerald-400">9</span></a>
-      <div class="flex items-center gap-3">
+      <div class="flex flex-wrap items-center gap-3">
         <button id="replay-guide" type="button" class="btn">Replay guide</button>
         <a href="/catalog" class="btn">Targets &amp; discoveries</a>
         <a href="/explorer" class="btn border-emerald-400/60 text-emerald-400">Open explorer</a>
       </div>
+<div id="session-ui" class="flex flex-wrap items-center gap-3"><a class="btn" href="/signin">Sign in</a></div>
     </header>
 
     <div id="target-bar" class="mb-8 flex flex-wrap gap-2" aria-label="Quick targets"></div>
@@ -159,6 +161,8 @@
       <div id="spherex-images" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"></div>
     </section>
     
+    </main>
+  </div>
   <script type="module" src="/src/main.ts"></script>
 </body>
 </html>

@@ -5,7 +5,7 @@
  * `motion-safe:animate-teacher-bob` work. Add new ones there, not in this file.
  */
 export default {
-  content: ['./index.html', './src/**/*.{ts,html}'],
+  content: ['./*.html', './src/**/*.{ts,html}'],
   theme: {
     extend: {
       fontFamily: {

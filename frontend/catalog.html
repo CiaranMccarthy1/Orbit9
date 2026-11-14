@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="en" class="scroll-smooth">
 <head>
+<link rel="stylesheet" href="/src/styles.css" />
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Orbit9 — Targets and student finds</title>
@@ -43,11 +44,7 @@
       <a href="#targets" class="rounded-lg px-3 py-2 hover:text-[#34d399]">Targets</a>
       <a href="#finds" class="rounded-lg px-3 py-2 hover:text-[#34d399]">Student finds</a>
       <a href="/" class="rounded-lg px-3 py-2 hover:text-[#34d399]">Sky map</a>
-      <button id="signin-btn" type="button" class="ml-1 rounded-full bg-[#34d399] px-5 py-2 font-semibold text-[#062118] hover:bg-[#6ee7b7]">Sign in</button>
-      <div id="user-pill" class="ml-1 hidden items-center gap-3 rounded-full border border-[#34d399]/40 px-4 py-1.5">
-        <strong id="user-handle" class="text-[#34d399]"></strong>
-        <button id="signout-btn" type="button" class="border-l border-slate-600 pl-3 hover:text-[#fb923c]">Sign out</button>
-      </div>
+<div id="session-ui" class="flex flex-wrap items-center gap-3"><a class="btn" href="/signin">Sign in</a></div>
     </nav>
   </div>
 </header>
@@ -63,7 +60,7 @@
         <a href="/explorer" class="rounded-full bg-[#34d399] px-6 py-3 text-lg font-semibold text-[#062118] hover:bg-[#6ee7b7]">Start exploring</a>
         <button type="button" data-open-claim class="rounded-full border-2 border-slate-500 px-6 py-3 text-lg font-semibold text-white hover:border-[#34d399] hover:text-[#34d399]">Claim a discovery</button>
       </div>
-      <p class="mt-5 text-sm"><span id="claim-count" class="font-semibold text-white">–</span> discoveries claimed so far</p>
+      <p class="mt-5 text-sm"><span id="claim-count" class="font-semibold text-white">–</span> discoveries loaded</p>
     </div>
     <div class="relative flex justify-center" aria-hidden="true">
       <svg class="rocket h-56 w-44 sm:h-72 sm:w-52"><use href="#rocket"/></svg>
@@ -91,7 +88,7 @@
         <a href="#catalog" class="mt-2 inline-block text-sm text-slate-400 hover:text-[#34d399]">Skip the guide</a>
       </section>
       <section aria-labelledby="lb-h" class="rounded-3xl border border-[#f59e0b]/35 bg-[#0f1526] p-5">
-        <h2 id="lb-h" class="font-['Sora'] text-xl font-bold text-white">Top student observers</h2>
+        <h2 id="lb-h" class="font-['Sora'] text-xl font-bold text-white">Observers in loaded results</h2>
         <ol id="leaderboard" class="mt-3 divide-y divide-slate-700/60"><li class="py-3 text-sm text-slate-400">Loading…</li></ol>
       </section>
     </aside>
@@ -117,6 +114,7 @@
         <div id="finds-grid" class="grid gap-4 md:grid-cols-2"></div>
       </section>
       <p id="empty" class="hidden rounded-3xl border border-slate-700 bg-[#0f1526] p-10 text-center">Nothing matches your search. Try another word, or pick “All”.</p>
+    <button id="load-more" type="button" class="btn" hidden>Load more discoveries</button>
     </main>
   </div>
 </div>
@@ -125,6 +123,7 @@
 <dialog id="claim-dialog" aria-labelledby="claim-h" class="m-auto w-[min(28rem,92vw)] rounded-3xl border border-[#a78bfa]/40 bg-[#0f1526] p-6 text-slate-300 backdrop:bg-black/70">
   <div class="flex justify-between gap-4"><h2 id="claim-h" class="font-['Sora'] text-2xl font-bold text-white">Claim a discovery</h2><button type="button" data-close aria-label="Close" class="rounded-full border border-slate-500 px-3 hover:border-[#fb923c]">✕</button></div>
   <p class="mt-2 text-sm">The first claim within 1 arcsecond wins. RA and Dec work like longitude and latitude, but for the sky.</p>
+  <p class="mt-2 text-sm">Claims here are photometric-only: no motion or parallax is fitted. Epoch positions can be submitted through the API. Results are indicative, not calibrated probabilities.</p>
   <form id="claim-form" class="mt-4 space-y-4">
     <div><label for="c-name" class="block text-sm font-medium">What did you find?</label><input id="c-name" required maxlength="48" class="mt-1 w-full rounded-xl border border-slate-600 bg-[#090d1a] px-3 py-2 focus:border-[#34d399] focus:outline-none" /></div>
     <div class="grid grid-cols-2 gap-3">
@@ -136,16 +135,7 @@
   </form>
 </dialog>
 
-<dialog id="auth-dialog" aria-labelledby="auth-h" class="m-auto w-[min(26rem,92vw)] rounded-3xl border border-[#34d399]/40 bg-[#0f1526] p-6 text-slate-300 backdrop:bg-black/70">
-  <div class="flex justify-between gap-4"><h2 id="auth-h" class="font-['Sora'] text-2xl font-bold text-white">Sign in</h2><button type="button" data-close aria-label="Close" class="rounded-full border border-slate-500 px-3 hover:border-[#fb923c]">✕</button></div>
-  <div class="mt-4 grid grid-cols-2 gap-1 rounded-full bg-[#090d1a] p-1 text-sm"><button type="button" id="tab-login" class="rounded-full py-1.5 font-semibold">Sign in</button><button type="button" id="tab-register" class="rounded-full py-1.5 font-semibold">Create account</button></div>
-  <form id="auth-form" class="mt-4 space-y-4">
-    <div><label for="a-user" class="block text-sm font-medium">Username</label><input id="a-user" required minlength="3" autocomplete="username" class="mt-1 w-full rounded-xl border border-slate-600 bg-[#090d1a] px-3 py-2 focus:border-[#34d399] focus:outline-none" /></div>
-    <div><label for="a-pass" class="block text-sm font-medium">Password <span class="font-normal text-slate-400">(8+ characters)</span></label><input id="a-pass" type="password" required minlength="8" class="mt-1 w-full rounded-xl border border-slate-600 bg-[#090d1a] px-3 py-2 focus:border-[#34d399] focus:outline-none" /></div>
-    <p id="auth-msg" role="alert" class="hidden rounded-xl bg-[#fb923c]/15 px-3 py-2 text-sm"></p>
-    <button id="auth-submit" type="submit" class="w-full rounded-full bg-[#34d399] py-3 font-semibold text-[#062118] hover:bg-[#6ee7b7] disabled:opacity-60"></button>
-  </form>
-</dialog>
+
 
 <dialog id="guide-dialog" aria-labelledby="guide-h" class="m-auto w-[min(26rem,92vw)] rounded-3xl border border-[#34d399]/40 bg-[#0f1526] p-6 text-slate-300 backdrop:bg-black/70">
   <h2 id="guide-h" class="font-['Sora'] text-xl font-bold text-white">Sky guide <span id="guide-step" class="text-sm font-normal text-slate-400"></span></h2>
@@ -154,5 +144,6 @@
 </dialog>
 
 
+<script type="module" src="/src/catalog.ts"></script>
 </body>
 </html>

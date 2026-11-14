@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en"><head>
+  <link rel="stylesheet" href="/src/styles.css" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Orbit9: SPHEREx Explorer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Sora:wght@500;600;700&display=swap" rel="stylesheet" />
+</head><body class="bg-slate-950 text-slate-300 font-sans">
+<header class="mx-auto flex flex-wrap gap-3 justify-between max-w-5xl p-4"><a href="/catalog" class="btn">Targets &amp; discoveries</a><div id="session-ui" class="flex flex-wrap items-center gap-3"><a class="btn" href="/signin">Sign in</a></div></header>
+<main class="mx-auto max-w-5xl space-y-6 px-4 py-8">
+    <a href="/" class="btn">← Back to sky map</a>
+    <h1 class="font-display text-3xl font-bold text-white">SPHEREx Explorer</h1>
+    <p id="coordinates" class="text-slate-400"></p>
+    <p id="explorer-status" role="status" aria-live="polite" class="flex items-center gap-3">
+      <svg id="loading-spinner" class="h-5 w-5 animate-spin text-emerald-400" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="3" opacity=".25"/><path d="M21 12a9 9 0 0 0-9-9" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>
+      <span id="status-text">Searching SPHEREx observations…</span>
+    </p>
+    <div id="controls" hidden class="flex flex-wrap gap-4">
+      <label>Observation <select id="epoch" class="ml-2 rounded bg-slate-800 p-2 text-white"></select></label>
+      <label>Detector band <select id="band" class="ml-2 rounded bg-slate-800 p-2 text-white"></select></label>
+    </div>
+    <img id="frame" class="max-h-[75vh] w-full object-contain" hidden alt="SPHEREx observation" />
+    <div id="fallback" hidden>
+      <p id="fallback-label" class="mb-3 rounded-lg border border-amber-400/30 bg-amber-400/10 p-3 text-sm text-amber-200"></p>
+      <div id="fallback-map" class="h-[28rem] w-full overflow-hidden rounded-xl border border-slate-800"></div>
+    </div>
+  </main>
+<script type="module" src="/src/explorer.ts"></script></body></html>

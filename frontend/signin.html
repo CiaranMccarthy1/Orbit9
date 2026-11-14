@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en"><head>
+  <link rel="stylesheet" href="/src/styles.css" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Orbit9: Sign in</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Sora:wght@500;600;700&display=swap" rel="stylesheet" />
+</head>
+<body class="bg-slate-950 font-sans text-slate-300">
+<header class="mx-auto max-w-3xl p-4"><a class="btn" href="/">Orbit9 · Sky map</a> <a class="btn" href="/catalog">Catalog</a></header>
+<main class="mx-auto max-w-md p-6">
+<h1 class="font-display text-3xl text-white" id="auth-heading">Sign in</h1>
+<div class="my-4 flex gap-3" role="group" aria-label="Account action">
+<button class="btn" type="button" id="tab-login" aria-pressed="true">Sign in</button>
+<button class="btn" type="button" id="tab-register" aria-pressed="false">Create account</button></div>
+<form id="auth-form" class="space-y-4">
+<label class="block">Username<input class="mt-1 block w-full rounded border border-slate-600 p-2" name="username" id="username" required pattern="[A-Za-z0-9_]{1,64}" minlength="1" maxlength="64" autocomplete="username" aria-describedby="username-hint"></label>
+<p id="username-hint" class="text-sm">1–64 letters, numbers or underscores.</p>
+<label class="block">Password<input class="mt-1 block w-full rounded border border-slate-600 p-2" name="password" id="password" type="password" required minlength="8" maxlength="128" autocomplete="current-password" aria-describedby="password-hint"></label>
+<p id="password-hint" class="text-sm">8–128 characters.</p>
+<button class="btn" id="show-password" type="button" aria-pressed="false">Show password</button>
+<p id="auth-message" role="alert"></p>
+<button id="auth-submit" class="btn w-full disabled:opacity-50" type="submit">Sign in</button>
+</form></main><script type="module" src="/src/signin.ts"></script></body></html>
