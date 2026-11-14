@@ -12,27 +12,27 @@ export function mountTimeline(
   let playing = false;
 
   root.innerHTML = `
-    <div class="mb-2 flex items-end justify-between">
-      <div>
-        <h2 class="font-semibold text-white">Time-lapse timeline</h2>
-        <p id="date" class="text-xs text-slate-400"></p>
+    <div class="flex flex-wrap items-center gap-x-4 gap-y-3">
+
+      <div class="flex items-center gap-2">
+        <button id="prev" class="btn px-5 py-2.5 text-base">← Back</button>
+        <button id="play" class="btn w-28 border-emerald-400 bg-emerald-400 py-2.5 text-base text-slate-950 hover:bg-emerald-300 hover:text-slate-950">▶ Play</button>
+        <button id="next" class="btn px-5 py-2.5 text-base">Next →</button>
       </div>
+
+      <div class="min-w-56 flex-1">
+        <input id="scrub" type="range" min="0" max="${last * 1000}" step="1" value="0" class="smooth w-full">
+        <div class="flex justify-between text-[11px] text-slate-500">
+          <span>${epochs[0]}</span><span>${epochs[last]}</span>
+        </div>
+      </div>
+
+      <span id="date" class="rounded-md bg-emerald-400/15 px-2 py-1 text-xs font-medium tabular-nums text-emerald-300"></span>
+
       <label class="flex items-center gap-2 text-xs text-slate-400">
         <span id="fps-val" class="w-10 text-right tabular-nums">2 fps</span>
-        <input id="fps" type="range" min="1" max="5" value="2" style="--p:25%" class="smooth w-28">
+        <input id="fps" type="range" min="1" max="5" value="2" style="--p:25%" class="smooth w-24">
       </label>
-    </div>
-
-    <input id="scrub" type="range" min="0" max="${last * 1000}" step="1" value="0" class="smooth w-full">
-
-    <div class="mt-3 flex items-center justify-between text-sm text-slate-400">
-      <span>${epochs[0]}</span>
-      <div class="flex items-center gap-4 text-lg">
-        <button id="prev" class="rounded-2xl border border-slate-700 px-6 py-3 text-slate-100 transition-colors hover:border-emerald-400 hover:text-emerald-400 active:scale-95">Previous</button>
-        <button id="play" class="w-36 rounded-2xl bg-emerald-400 py-3 font-semibold text-slate-950 transition-colors hover:bg-emerald-300 active:scale-95">Play</button>
-        <button id="next" class="rounded-2xl border border-slate-700 px-6 py-3 text-slate-100 transition-colors hover:border-emerald-400 hover:text-emerald-400 active:scale-95">Next</button>
-      </div>
-      <span>${epochs[last]}</span>
     </div>`;
 
   const $ = (id: string) => root.querySelector<HTMLInputElement>('#' + id)!;
@@ -43,7 +43,7 @@ export function mountTimeline(
     const i = Math.round(pos);
     if (i !== idx) {
       idx = i;
-      $('date').textContent = `Observation epoch: ${epochs[i]}`;
+      $('date').textContent = epochs[i];
       onChange(i);
     }
   };
@@ -65,14 +65,14 @@ export function mountTimeline(
   const stop = (settle = true) => {
     cancelAnimationFrame(raf);
     playing = false;
-    $('play').textContent = 'Play';
+    $('play').textContent = '▶ Play';
     if (settle) tween(Math.round(pos), 200);
   };
 
   const play = () => {
     cancelAnimationFrame(raf);
     playing = true;
-    $('play').textContent = 'Pause';
+    $('play').textContent = '⏸ Pause';
     let prev = performance.now();
     const tick = (t: number) => {
       pos += ((t - prev) / 1000) * fps;
