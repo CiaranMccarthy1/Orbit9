@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Orbit9 — Targets and student finds</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Sora:wght@600;700&display=swap" rel="stylesheet" />
+<style>
+  /* Plain CSS for the animations Tailwind utilities can't express. */
+  @keyframes bob { 0%,100% { transform: translateY(0) rotate(32deg) } 50% { transform: translateY(-12px) rotate(32deg) } }
+  @keyframes drift { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-8px) } }
+  @keyframes eq { from { transform: scaleY(1) } to { transform: scaleY(.45) } }
+  .rocket { animation: bob 6s ease-in-out infinite }
+  .drift { animation: drift 7s ease-in-out infinite }
+  .fp-bar { transform-origin: bottom }
+  .card:hover .fp-bar { animation: eq .7s ease-in-out infinite alternate }
+  @media (prefers-reduced-motion: reduce) { *, ::before, ::after { animation: none !important; transition: none !important } html { scroll-behavior: auto } }
+</style>
+</head>
+<body class="min-h-screen bg-[#090d1a] font-['IBM_Plex_Sans'] text-slate-300 antialiased [background-image:radial-gradient(circle_at_85%_0%,#1b2550_0%,transparent_45%),radial-gradient(circle_at_5%_90%,#1a1f46_0%,transparent_40%)] bg-fixed">
+
+<!-- Icon sprite: reused by <use href="#..."> everywhere -->
+<svg width="0" height="0" class="absolute" aria-hidden="true"><defs>
+  <symbol id="rocket" viewBox="0 0 100 140"><path d="M38 100Q50 142 62 100Z" fill="#fb923c"/><path d="M44 100Q50 125 56 100Z" fill="#f5c04a"/><path d="M30 70 14 102l22-10Zm40 0 16 32-22-10Z" fill="#5b7bd5"/><path d="M50 4C70 22 72 60 66 96H34C28 60 30 22 50 4Z" fill="#a78bfa"/><circle cx="50" cy="48" r="11" fill="#1e3a8a" stroke="#c7d2fe" stroke-width="4"/><path d="M36 82h28" stroke="#fff" stroke-opacity=".8" stroke-width="2"/></symbol>
+  <symbol id="star" viewBox="0 0 64 64"><path d="M32 6l6 20 20 6-20 6-6 20-6-20-20-6 20-6Z" fill="#f5c04a"/><path d="M32 0v5M32 59v5M0 32h5M59 32h5" stroke="#f5c04a" stroke-width="3" stroke-linecap="round"/></symbol>
+  <symbol id="ringed" viewBox="0 0 64 64"><circle cx="32" cy="32" r="15" fill="#e0a94a"/><path d="M19 28q13-6 26 0M18 36q14 5 28 0" stroke="#fff3" stroke-width="3" fill="none"/><ellipse cx="32" cy="34" rx="28" ry="8" transform="rotate(-20 32 34)" fill="none" stroke="#f5c04a" stroke-width="3"/></symbol>
+  <symbol id="ice" viewBox="0 0 64 64"><circle cx="32" cy="32" r="22" fill="#60a5fa"/><path d="M12 26q12-6 22-1t18-2M11 38q14 6 24 0t18 1" stroke="#dbeafe" stroke-width="3" fill="none"/><circle cx="24" cy="20" r="3" fill="#fff" opacity=".6"/></symbol>
+  <symbol id="exo" viewBox="0 0 64 64"><circle cx="32" cy="32" r="20" fill="#7c5cd6"/><path d="M14 30q18-10 36 2M16 42q16 8 32-2" stroke="#ddd6fe" stroke-width="3" fill="none"/><circle cx="46" cy="14" r="4" fill="#c4b5fd"/></symbol>
+</defs></svg>
+
+<a href="#catalog" class="sr-only focus:not-sr-only focus:absolute focus:left-3 focus:top-3 focus:z-50 focus:rounded-lg focus:bg-[#34d399] focus:px-3 focus:py-2 focus:text-[#062118]">Skip to targets</a>
+
+<header class="sticky top-0 z-30 border-b border-slate-700/50 bg-[#090d1a]/85 backdrop-blur">
+  <div class="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8">
+    <a href="#top" class="flex items-center gap-2.5 font-['Sora'] text-2xl font-bold text-white">
+      <svg viewBox="0 0 40 40" class="h-9 w-9" aria-hidden="true"><path d="M5 26A16 16 0 0 1 30 8" fill="none" stroke="#34d399" stroke-width="3" stroke-linecap="round"/><circle cx="20" cy="20" r="7" fill="#60a5fa"/><circle cx="31" cy="9" r="3" fill="#f5c04a"/></svg>
+      Orbit<span class="text-[#34d399]">9</span>
+    </a>
+    <nav class="flex flex-wrap items-center gap-1 text-sm font-medium" aria-label="Primary">
+      <a href="#how" class="rounded-lg px-3 py-2 hover:text-[#34d399]">How it works</a>
+      <a href="#targets" class="rounded-lg px-3 py-2 hover:text-[#34d399]">Targets</a>
+      <a href="#finds" class="rounded-lg px-3 py-2 hover:text-[#34d399]">Student finds</a>
+      <a href="/" class="rounded-lg px-3 py-2 hover:text-[#34d399]">Sky map</a>
+      <button id="signin-btn" type="button" class="ml-1 rounded-full bg-[#34d399] px-5 py-2 font-semibold text-[#062118] hover:bg-[#6ee7b7]">Sign in</button>
+      <div id="user-pill" class="ml-1 hidden items-center gap-3 rounded-full border border-[#34d399]/40 px-4 py-1.5">
+        <strong id="user-handle" class="text-[#34d399]"></strong>
+        <button id="signout-btn" type="button" class="border-l border-slate-600 pl-3 hover:text-[#fb923c]">Sign out</button>
+      </div>
+    </nav>
+  </div>
+</header>
+
+<div id="top" class="mx-auto max-w-7xl space-y-12 px-4 py-8 sm:px-6 lg:px-8">
+
+  <section class="relative grid items-center gap-6 overflow-hidden rounded-3xl border border-[#34d399]/35 bg-[#0f1526] p-6 sm:p-10 md:grid-cols-[1.3fr_1fr]">
+    <div class="relative z-10">
+      <p class="font-medium text-[#34d399]">For GCSE, Leaving Cert and A-level science students</p>
+      <h1 class="mt-2 font-['Sora'] text-4xl font-bold leading-tight text-white sm:text-5xl">Spot real planets and stars in NASA’s sky map</h1>
+      <p class="mt-4 max-w-xl text-lg leading-relaxed">NASA’s SPHEREx telescope photographs the whole sky in infrared light, which our eyes can’t see but which shows what things are made of. Pick an object, read its light, and claim what you find.</p>
+      <div class="mt-6 flex flex-wrap gap-3">
+        <a href="/explorer" class="rounded-full bg-[#34d399] px-6 py-3 text-lg font-semibold text-[#062118] hover:bg-[#6ee7b7]">Start exploring</a>
+        <button type="button" data-open-claim class="rounded-full border-2 border-slate-500 px-6 py-3 text-lg font-semibold text-white hover:border-[#34d399] hover:text-[#34d399]">Claim a discovery</button>
+      </div>
+      <p class="mt-5 text-sm"><span id="claim-count" class="font-semibold text-white">–</span> discoveries claimed so far</p>
+    </div>
+    <div class="relative flex justify-center" aria-hidden="true">
+      <svg class="rocket h-56 w-44 sm:h-72 sm:w-52"><use href="#rocket"/></svg>
+      <svg class="drift absolute -bottom-2 left-2 h-20 w-20"><use href="#ice"/></svg>
+      <svg class="drift absolute right-2 top-0 h-12 w-12 [animation-delay:-3s]"><use href="#star"/></svg>
+      <svg class="drift absolute bottom-10 right-0 h-16 w-16 [animation-delay:-5s]"><use href="#ringed"/></svg>
+    </div>
+  </section>
+
+  <section id="how" aria-labelledby="how-h">
+    <h2 id="how-h" class="font-['Sora'] text-2xl font-bold text-white">How it works</h2>
+    <ol class="mt-4 grid gap-4 md:grid-cols-3">
+      <li class="rounded-3xl border border-[#60a5fa]/35 bg-[#0f1526] p-5"><svg class="h-12 w-12" aria-hidden="true"><use href="#ringed"/></svg><h3 class="mt-3 font-['Sora'] text-lg font-semibold text-white">1. Pick a target</h3><p class="mt-1">Choose a NASA example or a student find, then open it in the Explorer.</p></li>
+      <li class="rounded-3xl border border-[#a78bfa]/35 bg-[#0f1526] p-5"><svg class="h-12 w-12" aria-hidden="true"><use href="#ice"/></svg><h3 class="mt-3 font-['Sora'] text-lg font-semibold text-white">2. Read its light</h3><p class="mt-1">Choose an observation and detector band to see its SPHEREx image.</p></li>
+      <li class="rounded-3xl border border-[#fb923c]/35 bg-[#0f1526] p-5"><svg class="h-12 w-12" aria-hidden="true"><use href="#star"/></svg><h3 class="mt-3 font-['Sora'] text-lg font-semibold text-white">3. Claim your spot</h3><p class="mt-1">The first claim within 1 arcsecond wins, and your name goes next to it.</p></li>
+    </ol>
+  </section>
+
+  <div class="grid gap-8 lg:grid-cols-[22rem_minmax(0,1fr)] lg:items-start">
+    <aside class="order-2 space-y-6 lg:order-1">
+      <section aria-label="Sky guide" class="rounded-3xl border border-[#34d399]/35 bg-[#0f1526] p-5 text-center">
+        <svg viewBox="0 0 120 100" class="mx-auto h-24 w-28" aria-hidden="true"><circle cx="60" cy="46" r="44" fill="#16323a"/><circle cx="60" cy="42" r="22" fill="#fde68a"/><path d="M38 34q22-12 44 0v-4q-22-14-44 0Z" fill="#111827"/><rect x="43" y="38" width="15" height="11" rx="4" fill="#c9b27a" stroke="#6ee7b7" stroke-width="2"/><rect x="62" y="38" width="15" height="11" rx="4" fill="#c9b27a" stroke="#6ee7b7" stroke-width="2"/><path d="M38 100q0-22 22-22t22 22Z" fill="#273146"/><path d="M50 82l10 14 10-14" stroke="#6ee7b7" stroke-width="3" fill="none"/></svg>
+        <p class="mt-3 rounded-2xl border border-[#34d399]/25 bg-[#060a14] px-4 py-3 text-left leading-relaxed">Hi, I’m your sky guide! Press the green button and I’ll show you how to spot planets and stars.</p>
+        <button id="guide-btn" type="button" class="mt-3 w-full rounded-full bg-[#34d399] py-3 font-semibold text-[#062118] hover:bg-[#6ee7b7]">▶ Show me how</button>
+        <a href="#catalog" class="mt-2 inline-block text-sm text-slate-400 hover:text-[#34d399]">Skip the guide</a>
+      </section>
+      <section aria-labelledby="lb-h" class="rounded-3xl border border-[#f59e0b]/35 bg-[#0f1526] p-5">
+        <h2 id="lb-h" class="font-['Sora'] text-xl font-bold text-white">Top student observers</h2>
+        <ol id="leaderboard" class="mt-3 divide-y divide-slate-700/60"><li class="py-3 text-sm text-slate-400">Loading…</li></ol>
+      </section>
+    </aside>
+
+    <main id="catalog" class="order-1 space-y-8 lg:order-2">
+      <div class="flex flex-col justify-between gap-3 rounded-full border border-slate-700 bg-[#0f1526] p-2 sm:flex-row sm:items-center">
+        <div class="flex flex-wrap gap-2" role="group" aria-label="Filter">
+          <button type="button" data-filter="all" class="filter-pill rounded-full px-4 py-1.5 text-sm font-semibold">All (<span id="n-all">0</span>)</button>
+          <button type="button" data-filter="targets" class="filter-pill rounded-full px-4 py-1.5 text-sm font-semibold">NASA examples (<span id="n-targets">0</span>)</button>
+          <button type="button" data-filter="finds" class="filter-pill rounded-full px-4 py-1.5 text-sm font-semibold">Student finds (<span id="n-finds">0</span>)</button>
+        </div>
+        <label class="w-full sm:w-64"><span class="sr-only">Search</span><input id="search" type="search" placeholder="Search by name or explorer" class="w-full rounded-full border border-slate-600 bg-[#090d1a] px-4 py-1.5 text-sm placeholder-slate-500 focus:border-[#34d399] focus:outline-none" /></label>
+      </div>
+
+      <p id="status" role="status" class="hidden rounded-2xl border border-[#fb923c]/40 bg-[#fb923c]/10 p-4 text-sm"></p>
+
+      <section id="targets" aria-labelledby="t-h" class="space-y-4">
+        <div><h2 id="t-h" class="font-['Sora'] text-2xl font-bold text-white">NASA example targets</h2><p class="text-slate-400">Famous objects to practise on.</p></div>
+        <div id="targets-grid" class="grid gap-4 md:grid-cols-2"></div>
+      </section>
+      <section id="finds" aria-labelledby="f-h" class="space-y-4">
+        <div><h2 id="f-h" class="font-['Sora'] text-2xl font-bold text-white">Student finds</h2><p class="text-slate-400">Spots other explorers have claimed.</p></div>
+        <div id="finds-grid" class="grid gap-4 md:grid-cols-2"></div>
+      </section>
+      <p id="empty" class="hidden rounded-3xl border border-slate-700 bg-[#0f1526] p-10 text-center">Nothing matches your search. Try another word, or pick “All”.</p>
+    </main>
+  </div>
+</div>
+
+<!-- Modals use native <dialog>: focus trapping and Escape come for free -->
+<dialog id="claim-dialog" aria-labelledby="claim-h" class="m-auto w-[min(28rem,92vw)] rounded-3xl border border-[#a78bfa]/40 bg-[#0f1526] p-6 text-slate-300 backdrop:bg-black/70">
+  <div class="flex justify-between gap-4"><h2 id="claim-h" class="font-['Sora'] text-2xl font-bold text-white">Claim a discovery</h2><button type="button" data-close aria-label="Close" class="rounded-full border border-slate-500 px-3 hover:border-[#fb923c]">✕</button></div>
+  <p class="mt-2 text-sm">The first claim within 1 arcsecond wins. RA and Dec work like longitude and latitude, but for the sky.</p>
+  <form id="claim-form" class="mt-4 space-y-4">
+    <div><label for="c-name" class="block text-sm font-medium">What did you find?</label><input id="c-name" required maxlength="48" class="mt-1 w-full rounded-xl border border-slate-600 bg-[#090d1a] px-3 py-2 focus:border-[#34d399] focus:outline-none" /></div>
+    <div class="grid grid-cols-2 gap-3">
+      <div><label for="c-ra" class="block text-sm font-medium">RA (0–360°)</label><input id="c-ra" type="number" step="any" min="0" max="360" required class="mt-1 w-full rounded-xl border border-slate-600 bg-[#090d1a] px-3 py-2 font-['JetBrains_Mono'] text-sm focus:border-[#34d399] focus:outline-none" /></div>
+      <div><label for="c-dec" class="block text-sm font-medium">Dec (−90–90°)</label><input id="c-dec" type="number" step="any" min="-90" max="90" required class="mt-1 w-full rounded-xl border border-slate-600 bg-[#090d1a] px-3 py-2 font-['JetBrains_Mono'] text-sm focus:border-[#34d399] focus:outline-none" /></div>
+    </div>
+    <p id="claim-msg" role="alert" class="hidden rounded-xl px-3 py-2 text-sm"></p>
+    <button id="claim-submit" type="submit" class="w-full rounded-full bg-[#34d399] py-3 font-semibold text-[#062118] hover:bg-[#6ee7b7] disabled:opacity-60">Claim it</button>
+  </form>
+</dialog>
+
+<dialog id="auth-dialog" aria-labelledby="auth-h" class="m-auto w-[min(26rem,92vw)] rounded-3xl border border-[#34d399]/40 bg-[#0f1526] p-6 text-slate-300 backdrop:bg-black/70">
+  <div class="flex justify-between gap-4"><h2 id="auth-h" class="font-['Sora'] text-2xl font-bold text-white">Sign in</h2><button type="button" data-close aria-label="Close" class="rounded-full border border-slate-500 px-3 hover:border-[#fb923c]">✕</button></div>
+  <div class="mt-4 grid grid-cols-2 gap-1 rounded-full bg-[#090d1a] p-1 text-sm"><button type="button" id="tab-login" class="rounded-full py-1.5 font-semibold">Sign in</button><button type="button" id="tab-register" class="rounded-full py-1.5 font-semibold">Create account</button></div>
+  <form id="auth-form" class="mt-4 space-y-4">
+    <div><label for="a-user" class="block text-sm font-medium">Username</label><input id="a-user" required minlength="3" autocomplete="username" class="mt-1 w-full rounded-xl border border-slate-600 bg-[#090d1a] px-3 py-2 focus:border-[#34d399] focus:outline-none" /></div>
+    <div><label for="a-pass" class="block text-sm font-medium">Password <span class="font-normal text-slate-400">(8+ characters)</span></label><input id="a-pass" type="password" required minlength="8" class="mt-1 w-full rounded-xl border border-slate-600 bg-[#090d1a] px-3 py-2 focus:border-[#34d399] focus:outline-none" /></div>
+    <p id="auth-msg" role="alert" class="hidden rounded-xl bg-[#fb923c]/15 px-3 py-2 text-sm"></p>
+    <button id="auth-submit" type="submit" class="w-full rounded-full bg-[#34d399] py-3 font-semibold text-[#062118] hover:bg-[#6ee7b7] disabled:opacity-60"></button>
+  </form>
+</dialog>
+
+<dialog id="guide-dialog" aria-labelledby="guide-h" class="m-auto w-[min(26rem,92vw)] rounded-3xl border border-[#34d399]/40 bg-[#0f1526] p-6 text-slate-300 backdrop:bg-black/70">
+  <h2 id="guide-h" class="font-['Sora'] text-xl font-bold text-white">Sky guide <span id="guide-step" class="text-sm font-normal text-slate-400"></span></h2>
+  <p id="guide-text" aria-live="polite" class="mt-3 min-h-20 rounded-2xl border border-[#34d399]/25 bg-[#060a14] p-4 leading-relaxed"></p>
+  <div class="mt-4 flex gap-2"><button type="button" id="guide-prev" class="rounded-full border border-slate-500 px-4 py-2 hover:border-[#34d399]">Back</button><button type="button" id="guide-next" class="flex-1 rounded-full bg-[#34d399] py-2 font-semibold text-[#062118] hover:bg-[#6ee7b7]"></button></div>
+</dialog>
+
+
+</body>
+</html>

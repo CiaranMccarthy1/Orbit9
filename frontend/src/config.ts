@@ -27,4 +27,5 @@ export const DRAG_THRESHOLD_PX = 6;
 /** localStorage keys, kept together so they never collide. */
 export const STORAGE_KEYS = {
   voice: 'orbit9-voice',
+  authToken: 'orbit9-token',
 } as const;

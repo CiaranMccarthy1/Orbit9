@@ -15,8 +15,16 @@ import { initGuide } from './guide/guide';
 import { initSkyMap } from './sky-map';
 import { initTargetBar } from './targetBar';
 import { initExplorer } from './explorer';
+import catalogHtml from './catalog.html?raw';
 
-if (window.location.pathname.replace(/\/$/, '') === '/explorer') {
+const path = window.location.pathname.replace(/\/$/, '');
+if (path === '/catalog') {
+  const page = new DOMParser().parseFromString(catalogHtml, 'text/html');
+  document.title = page.title;
+  page.head.querySelectorAll('style').forEach((style) => document.head.append(style));
+  document.body.replaceWith(page.body);
+  void import('./catalog');
+} else if (path === '/explorer') {
   initExplorer();
 } else {
   initSkyMap();
