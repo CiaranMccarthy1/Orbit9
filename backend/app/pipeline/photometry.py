@@ -13,11 +13,18 @@ def aperture_median(fits_path, ra, dec, radius_px=3):
     """
     data, wcs = load_image(fits_path)
     x, y = wcs.all_world2pix(ra, dec, 0)
-    yy, xx = np.ogrid[:data.shape[0], :data.shape[1]]
+    # window around the aperture: no full-frame grids for a 7-px circle
+    r = radius_px
+    i0, i1 = max(int(y) - r - 1, 0), min(int(y) + r + 2, data.shape[0])
+    j0, j1 = max(int(x) - r - 1, 0), min(int(x) + r + 2, data.shape[1])
+    if i0 >= i1 or j0 >= j1:
+        return None
+    yy, xx = np.ogrid[i0:i1, j0:j1]
     mask = (xx - x) ** 2 + (yy - y) ** 2 <= radius_px ** 2
     if not mask.any():
         return None
-    return {"median": float(np.nanmedian(data[mask])), "n_pixels": int(mask.sum())}
+    sub = data[i0:i1, j0:j1]
+    return {"median": float(np.nanmedian(sub[mask])), "n_pixels": int(mask.sum())}
 
 
 def flag_stats(fits_path):

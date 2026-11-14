@@ -44,6 +44,6 @@ def ensure_render(key, png_path, build):
         return f"/storage/png_renders/{png_path.name}", True
     build()
     with SessionLocal() as db:
-        db.merge(Render(key=key, png_path=str(png_path)))
+        db.merge(Render(key=key))
         db.commit()
     return f"/storage/png_renders/{png_path.name}", False

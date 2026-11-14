@@ -30,5 +30,4 @@ class Render(Base):
     """Cached rendered PNG per downloaded FITS."""
     __tablename__ = "renders"
     key: Mapped[str] = mapped_column(String, primary_key=True)
-    png_path: Mapped[str] = mapped_column(String)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)

@@ -3,8 +3,8 @@ from app.pipeline.grouping import group_exposures
 
 def make(obs_id, em_min, t_min=60000.0):
     return {"obs_id": obs_id, "access_url": f"https://irsa.ipac.caltech.edu/{obs_id}{em_min}",
-            "size_kb": 1, "exptime": 1.0, "em_min_um": em_min, "em_max_um": em_min + 0.5,
-            "res_power": 1.0, "res_arcsec": 3.0, "t_min": t_min, "t_max": t_min}
+            "size_kb": 1, "em_min_um": em_min, "em_max_um": em_min + 0.5,
+            "res_power": 1.0, "res_arcsec": 3.0, "t_min": t_min}
 
 
 def test_group_exposures_sorts_and_bands():
