@@ -10,6 +10,7 @@ from app.database import Base
 def _db(tmp_path, monkeypatch):
     engine = create_engine(f"sqlite:///{tmp_path}/t.db")
     Base.metadata.create_all(engine)
+    monkeypatch.setattr(config, "STORAGE_DIR", str(tmp_path))
     monkeypatch.setattr(cache, "SessionLocal", sessionmaker(bind=engine))
 
 
@@ -37,9 +38,6 @@ def test_ensure_fits_download_failure_is_502(tmp_path, monkeypatch):
     monkeypatch.setattr(config, "STORAGE_DIR", str(tmp_path))
     monkeypatch.setattr(cache, "download_fits",
                         lambda url, path: (_ for _ in ()).throw(RuntimeError("timeout")))
-    try:
-        with pytest.raises(HTTPException) as e:
-            cache.ensure_fits("https://irsa.ipac.caltech.edu/ibe/data/spherex/x.fits")
-        assert e.value.status_code == 502 and "timeout" in e.value.detail
-    finally:
-        config.STORAGE_DIR = "./storage"
+    with pytest.raises(HTTPException) as e:
+        cache.ensure_fits("https://irsa.ipac.caltech.edu/ibe/data/spherex/x.fits")
+    assert e.value.status_code == 502 and "timeout" in e.value.detail
