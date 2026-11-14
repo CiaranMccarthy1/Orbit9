@@ -14,9 +14,7 @@ services:
       retries: 15
 
   api:
-    build:
-      context: ./backend
-      network: host
+    build: ./backend
     ports:
       - "8000:8000"
     environment:
