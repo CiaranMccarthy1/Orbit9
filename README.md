@@ -32,16 +32,26 @@ Uses SQLite in `backend/storage/` by default.
 
 ## Endpoints
 
-| Path | What it does |
-|---|---|
-| `GET /targets` | preset sky targets |
-| `GET /frames?ra&dec&radius` | observation epochs covering a position |
-| `GET /render?url=...` | IRSA SPHEREx FITS → stretched PNG |
-| `GET /health` | liveness |
-| `GET /combine?mode=diff\|coadd\|stack&urls=...` | epoch subtraction / stacking / band sums → PNG |
-| `GET /rgb?r&g&b` | three bands → false-colour composite |
-| `GET /photometry?ra&dec&urls=...` | aperture medians across band files |
-| `GET /flags?url=...` | FLAGS bit counts + VARIANCE summary |
+| Path | What it does | Auth |
+|---|---|---|
+| `GET /health` | liveness | — |
+| `GET /targets` | preset sky targets | — |
+| `GET /frames?ra&dec&radius` | observation epochs covering a position | — |
+| `GET /render?url=...` | IRSA SPHEREx FITS → stretched PNG | — |
+| `GET /combine?mode=diff\|coadd\|stack&urls=...` | epoch subtraction / stacking / band sums → PNG | — |
+| `GET /rgb?r&g&b` | three bands → false-colour composite | — |
+| `GET /photometry?ra&dec&urls=...` | aperture medians across band files | — |
+| `GET /flags?url=...` | FLAGS bit counts + VARIANCE summary | — |
+| `POST /register` | create account `{username, password}` | — |
+| `POST /login` | log in, returns 7-day bearer token | — |
+| `GET /me` | current account | bearer |
+| `POST /logout` | invalidate the token | bearer |
+| `GET /discoveries` | claimed planets (public read) | — |
+| `POST /discoveries` | claim a discovery `{name, ra, dec}`; first claim within 1″ wins | bearer |
+
+All endpoints are JSON. `POST` bodies are JSON objects; query params on `GET`.
+Every IRSA URL parameter is validated against `https://irsa.ipac.caltech.edu/ibe/data/spherex/`.
+Rendered PNGs are served at `/storage/png_renders/{sha1}.png`.
 
 ## Curl examples
 
