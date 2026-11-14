@@ -2,10 +2,10 @@ import numpy as np
 from astropy.io import fits
 from PIL import Image
 
-from app.pipeline.combine import combine
+from app.pipeline.combine import combine, crop_common
 from app.pipeline.grouping import array_of
 from app.pipeline.photometry import aperture_median, flag_stats
-from app.pipeline.png_renderer import save_image
+from app.pipeline.png_renderer import render_png, save_image
 
 WCS_CARDS = dict(CTYPE1="RA---TAN", CTYPE2="DEC--TAN", CUNIT1="deg",
                  CUNIT2="deg", CRVAL1=10.0, CRVAL2=20.0,
@@ -66,17 +66,41 @@ def test_array_mapping_matches_spherex_ranges():
 def test_concurrent_png_writes_leave_valid_file(tmp_path):
     import threading
 
-    from PIL import Image as PILImage
 
     out = tmp_path / "race.png"
-    imgs = [PILImage.fromarray(np.full((64, 64), v, dtype=np.uint8)) for v in (40, 200)]
+    imgs = [Image.fromarray(np.full((64, 64), v, dtype=np.uint8)) for v in (40, 200)]
     threads = [threading.Thread(target=lambda im=im: [save_image(im, out) for _ in range(20)])
                for im in imgs]
     for t in threads:
         t.start()
     for t in threads:
         t.join()
-    result = np.asarray(PILImage.open(out))
+    result = np.asarray(Image.open(out))
     assert result.shape == (64, 64)
     assert set(np.unique(result)).issubset({40, 200})
     assert len(np.unique(result)) == 1  # never a torn mix of the two images
+
+
+def test_render_png_handles_nan_pixels(tmp_path):
+    img = np.full((16, 16), 5.0)
+    img[3, 4] = np.nan
+    img[8, 8] = 100.0  # non-flat so ZScale produces real contrast
+    make_fits(tmp_path / "n.fits", img)
+    out = render_png(tmp_path / "n.fits", tmp_path / "n.png")
+    a = np.asarray(Image.open(out))
+    assert a.shape == (16, 16) and a.max() > 0
+
+
+def test_crop_common_trims_to_overlap():
+    a = np.full((10, 10), np.nan); a[2:6, 2:6] = 1.0
+    b = np.full((10, 10), np.nan); b[4:8, 4:8] = 2.0
+    out = crop_common([a, b])
+    assert out[0].shape == (2, 2)          # rows/cols 4..5
+    assert np.isfinite(out[0]).all() and np.isfinite(out[1]).all()
+
+
+def test_crop_common_no_overlap_returns_unchanged():
+    a = np.full((6, 6), np.nan); a[0:2, 0:2] = 1.0
+    b = np.full((6, 6), np.nan); b[4:6, 4:6] = 2.0
+    out = crop_common([a, b])
+    assert out[0].shape == (6, 6)
