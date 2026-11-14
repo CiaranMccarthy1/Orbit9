@@ -45,11 +45,21 @@ def fetch_epochs(ra, dec, radius_deg=0.1):
 
 
 def download_fits(url, dest):
+    import os
+    import shutil
+    import tempfile
     import urllib.request
 
     dest.parent.mkdir(parents=True, exist_ok=True)
-    with urllib.request.urlopen(url, timeout=120) as r:
-        dest.write_bytes(r.read())
+    # unique temp per request: concurrent callers can't interleave writes
+    fd, tmp = tempfile.mkstemp(dir=dest.parent, suffix=".part")
+    try:
+        with os.fdopen(fd, "wb") as f, urllib.request.urlopen(url, timeout=120) as r:
+            shutil.copyfileobj(r, f)
+        os.replace(tmp, dest)
+    except BaseException:
+        os.unlink(tmp)
+        raise
     return dest
 
 
