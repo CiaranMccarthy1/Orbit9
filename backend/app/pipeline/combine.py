@@ -1,8 +1,7 @@
 """Multi-frame maths: epoch subtraction, co-addition, band stacking."""
 import numpy as np
-from astropy.io import fits
 
-from app.pipeline.imaging import load_aligned, nan_mean
+from app.pipeline.imaging import load_aligned, load_image, nan_mean
 from app.pipeline.png_renderer import save_gray
 
 MODES = ("diff", "coadd", "stack")
@@ -40,10 +39,6 @@ def combine(mode, fits_paths, png_path):
     if mode == "stack":
         # shortcut: stack assumes one detector-array's bands share a WCS;
         # reproject anyway is skipped here to keep band sums exact
-        arrays = [
-            (np.asarray(fits.getdata(p, "IMAGE"), dtype=np.float32)
-             - np.asarray(fits.getdata(p, "ZODI"), dtype=np.float32))
-            for p in fits_paths
-        ]
+        arrays = [load_image(p)[0] for p in fits_paths]
         return save_gray(nan_mean(arrays), png_path)
     raise ValueError(f"unknown mode {mode!r}")

@@ -4,7 +4,7 @@ import tempfile
 from pathlib import Path
 
 import numpy as np
-from astropy.io import fits
+from app.pipeline.imaging import load_image
 from astropy.visualization import ZScaleInterval
 from PIL import Image
 
@@ -35,10 +35,7 @@ def save_gray(data, png_path):
 
 
 def render_png(fits_path, png_path):
-    # shortcut: astropy's stubs type getdata() as Optional/tuple even when the
-    # extension is guaranteed; asarray coerces and keeps pyright quiet
-    data = np.asarray(fits.getdata(fits_path, "IMAGE"), dtype=np.float32) \
-        - np.asarray(fits.getdata(fits_path, "ZODI"), dtype=np.float32)
+    data, _ = load_image(fits_path)
     return save_gray(data, png_path)
 
 

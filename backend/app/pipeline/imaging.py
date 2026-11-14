@@ -3,16 +3,43 @@
 shortcut: reproject_interp on the full 2040x2040 frame; move to blockwise/Dask
 if multi-epoch stacks get slow.
 """
+from contextlib import contextmanager
+from pathlib import Path
+from typing import Any, Iterator
+
+from fastapi import HTTPException
 import numpy as np
 from astropy.io import fits
 from astropy.wcs import WCS
 
 
+@contextmanager
+def open_fits(fits_path) -> Iterator[Any]:
+    try:
+        with fits.open(fits_path, memmap=False) as hdus:
+            yield hdus
+    except (OSError, ValueError, TypeError, KeyError, IndexError) as exc:
+        Path(fits_path).unlink(missing_ok=True)
+        raise HTTPException(502, f"Invalid FITS or missing required extension: {exc}") from exc
+
+
+def read_extension(fits_path, name):
+    with open_fits(fits_path) as hdus:
+        data = np.array(hdus[name].data)
+        if data.ndim != 2:
+            raise ValueError(f"{name} must be a 2D image")
+        return data
+
+
 def load_image(fits_path):
     """ZODI-subtracted IMAGE array + world WCS."""
-    data = np.asarray(fits.getdata(fits_path, "IMAGE"), dtype=np.float32) \
-        - np.asarray(fits.getdata(fits_path, "ZODI"), dtype=np.float32)
-    wcs = WCS(fits.getheader(fits_path, "IMAGE"))
+    with open_fits(fits_path) as hdus:
+        data = np.array(hdus["IMAGE"].data, dtype=np.float32)
+        if data.ndim != 2:
+            raise ValueError("IMAGE must be a 2D image")
+        if "ZODI" in hdus:
+            data -= np.asarray(hdus["ZODI"].data, dtype=np.float32)
+        wcs = WCS(hdus["IMAGE"].header)
     return data, wcs
 
 

@@ -1,8 +1,7 @@
 """Aperture photometry at a sky position and FITS quality stats."""
 import numpy as np
-from astropy.io import fits
 
-from app.pipeline.imaging import load_image
+from app.pipeline.imaging import load_image, read_extension
 
 
 def aperture_median(fits_path, ra, dec, radius_px=3):
@@ -49,7 +48,7 @@ def aperture_flux(fits_path, ra, dec, radius_px=3):
         return None
     sub = data[i0:i1, j0:j1]
     background = float(np.nanmedian(sub[annulus]))
-    flags = np.asarray(fits.getdata(fits_path, "FLAGS"))[i0:i1, j0:j1]
+    flags = np.asarray(read_extension(fits_path, "FLAGS"))[i0:i1, j0:j1]
     pixel_area_deg2 = abs(np.linalg.det(wcs.pixel_scale_matrix))
     return {
         "flux": float(np.nansum(sub[aperture] - background)),
@@ -60,10 +59,10 @@ def aperture_flux(fits_path, ra, dec, radius_px=3):
 
 def flag_stats(fits_path):
     """Per-bit FLAGS counts and VARIANCE summary for one frame."""
-    flags = np.asarray(fits.getdata(fits_path, "FLAGS"))
-    var = np.asarray(fits.getdata(fits_path, "VARIANCE"), dtype=np.float32)
-    bits = {str(b): int(np.count_nonzero(flags & (1 << b))) for b in range(16)
-            if np.count_nonzero(flags & (1 << b))}
+    flags = np.asarray(read_extension(fits_path, "FLAGS"))
+    var = np.asarray(read_extension(fits_path, "VARIANCE"), dtype=np.float32)
+    counts = [int(np.count_nonzero(flags & (1 << b))) for b in range(16)]
+    bits = {str(b): count for b, count in enumerate(counts) if count}
     return {
         "pixels": int(flags.size),
         "flagged_fraction": float(np.count_nonzero(flags) / flags.size),

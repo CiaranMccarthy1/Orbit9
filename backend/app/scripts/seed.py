@@ -1,3 +1,5 @@
+from sqlalchemy.exc import IntegrityError
+
 from app.database import SessionLocal
 from app.models import Target
 
@@ -14,7 +16,11 @@ PRESETS = (
 
 def seed_targets():
     with SessionLocal() as db:
-        existing = {t.name for t in db.query(Target)}
-        db.add_all(Target(name=n, ra=ra, dec=dec)
-                   for n, ra, dec in PRESETS if n not in existing)
+        for name, ra, dec in PRESETS:
+            try:
+                with db.begin_nested():
+                    db.add(Target(name=name, ra=ra, dec=dec))
+                    db.flush()
+            except IntegrityError:
+                pass  # another startup already inserted this preset
         db.commit()
