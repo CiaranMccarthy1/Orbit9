@@ -2,6 +2,13 @@
 
 Interactive viewer for NASA/IPAC IRSA SPHEREx sky data.
 
+<img src="/screenshots/orbitnine.png"/>
+
+## Screenshots
+| Home | Exploration View | Sky Map |
+| :---: | :---: | :---: |
+| <img src="/screenshots/iphoneweb1.jpg" width="300" /> | <img src="/screenshots/iphoneweb2.jpg" width="300" /> | <img src="/screenshots/iphoneweb3.jpg" width="300"/> |
+
 ## Run
 
 ### Docker (recommended)
