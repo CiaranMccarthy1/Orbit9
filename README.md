@@ -38,6 +38,10 @@ Uses SQLite in `backend/storage/` by default.
 | `GET /frames?ra&dec&radius` | observation epochs covering a position |
 | `GET /render?url=...` | IRSA SPHEREx FITS → stretched PNG |
 | `GET /health` | liveness |
+| `GET /combine?mode=diff\|coadd\|stack&urls=...` | epoch subtraction / stacking / band sums → PNG |
+| `GET /rgb?r&g&b` | three bands → false-colour composite |
+| `GET /photometry?ra&dec&urls=...` | aperture medians across band files |
+| `GET /flags?url=...` | FLAGS bit counts + VARIANCE summary |
 
 ## Curl examples
 
@@ -49,6 +53,16 @@ curl "localhost:8000/frames?ra=269.452&dec=4.693&radius=0.05"
 URL=$(curl -s "localhost:8000/frames?ra=269.452&dec=4.693&radius=0.05" \
   | jq -r '.exposures[0].bands[0].url')
 curl --get --data-urlencode "url=$URL" localhost:8000/render
+
+# epoch N - N-1 of the same detector array (motion dipoles)
+URL2=$(curl -s "localhost:8000/frames?ra=269.452&dec=4.693&radius=0.05" \
+  | jq -r '.exposures[1].bands[0].url')
+curl -G localhost:8000/combine --data-urlencode "mode=diff" \
+  --data-urlencode "urls=$URL,$URL2"
+
+# aperture photometry at the target position
+curl -G localhost:8000/photometry --data-urlencode "ra=269.452" \
+  --data-urlencode "dec=4.693" --data-urlencode "urls=$URL,$URL2"
 ```
 
 ## Config
