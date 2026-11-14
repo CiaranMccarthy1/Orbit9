@@ -8,7 +8,6 @@
  * Aladin loads asynchronously. If its script or survey tiles are blocked,
  * catch() swaps in a fallback message and a plain Explorer link.
  */
-import A from 'aladin-lite';
 import { DRAG_THRESHOLD_PX, EXPLORER_PATH, MAP_START, SKY_SURVEY } from './config';
 import { byId } from './dom';
 import { buildExplorerUrl } from './urlState';
@@ -58,8 +57,9 @@ export function initSkyMap(): void {
       </div>`;
   };
 
-  A.init
-    .then(async () => {
+  import('aladin-lite')
+    .then(async ({ default: A }) => {
+      await A.init;
       if (!(await surveyReachable())) return showMapUnavailable();
       const aladin: any = A.aladin('#sky-map', {
         survey: SKY_SURVEY,

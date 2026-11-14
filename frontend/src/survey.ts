@@ -6,12 +6,16 @@ import { SKY_SURVEY } from './config';
  * instead of a blank map.
  */
 export async function surveyReachable(timeoutMs = 8000): Promise<boolean> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
     const response = await fetch(`${SKY_SURVEY}/properties`, {
-      signal: AbortSignal.timeout(timeoutMs),
+      signal: controller.signal,
     });
     return response.ok;
   } catch {
     return false;
+  } finally {
+    clearTimeout(timer);
   }
 }

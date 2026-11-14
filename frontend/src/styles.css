@@ -84,3 +84,6 @@
     animation: teacher-talk 0.22s ease-in-out infinite;
   }
 }
+
+html { background: #020617; color-scheme: dark; }
+[hidden] { display: none !important; }

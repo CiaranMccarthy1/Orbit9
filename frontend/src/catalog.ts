@@ -51,7 +51,7 @@ let search = '';
 let user: string | null = null;
 
 /* ---------- Rendering ---------- */
-interface CardData { name: string; ra: number; dec: number; blurb: string; kind: 'target' | 'find'; username?: string; createdAt?: string }
+interface CardData { name: string; ra: number; dec: number; blurb: string; kind: 'target' | 'find'; username?: string; createdAt?: string; classification?: api.Classification | null }
 
 function cardHtml(c: CardData): string {
   const h = hash(c.name);
@@ -68,6 +68,7 @@ function cardHtml(c: CardData): string {
       </div>
       <h3 class="mt-3 font-['Sora'] text-xl font-semibold text-white">${escapeHtml(c.name)}</h3>
       <div class="mt-1 flex flex-wrap items-center gap-2 text-sm">${who}<span class="text-slate-400">${escapeHtml(c.blurb)}</span></div>
+      ${c.kind === 'find' ? `<p class="mt-3 text-sm">${escapeHtml(api.classificationText(c.classification ?? null))}</p>` : ''}
     </div>
     <div class="mt-4 border-t border-slate-700 pt-4">
       <p class="font-['JetBrains_Mono'] text-xs">RA ${c.ra.toFixed(5)}° · Dec ${c.dec.toFixed(5)}°</p>
@@ -125,7 +126,7 @@ async function loadData(): Promise<void> {
   const [t, d] = await Promise.allSettled([api.getTargets(), api.getDiscoveries()]);
   const status = el('status');
   if (t.status === 'fulfilled') targets = t.value;
-  if (d.status === 'fulfilled') discoveries = d.value;
+  if (d.status === 'fulfilled') { discoveries = d.value; el('load-more').hidden = d.value.length < 50; }
   const failed = [t, d].find((r) => r.status === 'rejected') as PromiseRejectedResult | undefined;
   status.classList.toggle('hidden', !failed);
   if (failed) status.innerHTML = `${escapeHtml((failed.reason as Error).message)} <button id="retry" type="button" class="ml-1 font-semibold text-[#34d399] underline">Try again</button>`;
@@ -134,47 +135,31 @@ async function loadData(): Promise<void> {
 
 /* ---------- Dialogs ---------- */
 const claimDialog = el<HTMLDialogElement>('claim-dialog');
-const authDialog = el<HTMLDialogElement>('auth-dialog');
 const guideDialog = el<HTMLDialogElement>('guide-dialog');
-let authMode: 'login' | 'register' = 'login';
 
 function showMessage(box: HTMLElement, text: string, good = false): void {
   box.textContent = text;
   box.className = `rounded-xl px-3 py-2 text-sm ${good ? 'bg-[#34d399]/15 text-[#6ee7b7]' : 'bg-[#fb923c]/15 text-slate-100'}`;
 }
 
-function openAuth(mode: 'login' | 'register', note?: string): void {
-  authMode = mode;
-  const login = mode === 'login';
-  el('auth-h').textContent = login ? 'Sign in' : 'Create account';
-  el('auth-submit').textContent = login ? 'Sign in' : 'Create account';
-  el<HTMLInputElement>('a-pass').autocomplete = login ? 'current-password' : 'new-password';
-  el('tab-login').className = `rounded-full py-1.5 font-semibold ${login ? 'bg-[#34d399] text-[#062118]' : ''}`;
-  el('tab-register').className = `rounded-full py-1.5 font-semibold ${!login ? 'bg-[#34d399] text-[#062118]' : ''}`;
-  if (note) showMessage(el('auth-msg'), note); else el('auth-msg').className = 'hidden';
-  if (!authDialog.open) authDialog.showModal();
+function redirectClaim(): void {
+  const params = new URLSearchParams({ claim: '1', ra: el<HTMLInputElement>('c-ra').value, dec: el<HTMLInputElement>('c-dec').value, name: el<HTMLInputElement>('c-name').value });
+  location.assign(auth.signinUrl(`/catalog?${params}`));
 }
 
 function openClaim(ra?: string, dec?: string): void {
   el('claim-msg').className = 'hidden';
   if (ra) el<HTMLInputElement>('c-ra').value = ra;
   if (dec) el<HTMLInputElement>('c-dec').value = dec;
+  if (!user) { redirectClaim(); return; }
   claimDialog.showModal();
-}
-
-/* ---------- Session ---------- */
-function showUser(): void {
-  el('signin-btn').classList.toggle('hidden', !!user);
-  el('user-pill').classList.toggle('hidden', !user);
-  el('user-pill').classList.toggle('flex', !!user);
-  if (user) el('user-handle').textContent = `@${user}`;
 }
 
 /* ---------- Claiming a discovery ---------- */
 async function handleClaimSubmit(e: SubmitEvent): Promise<void> {
   e.preventDefault();
   const token = auth.getToken();
-  if (!user || !token) { claimDialog.close(); openAuth('login', 'Sign in first to claim a discovery.'); return; }
+  if (!user || !token) { redirectClaim(); return; }
 
   const msg = el('claim-msg');
   const button = el<HTMLButtonElement>('claim-submit');
@@ -188,7 +173,7 @@ async function handleClaimSubmit(e: SubmitEvent): Promise<void> {
     showMessage(msg, `You did it! “${name}” is now yours.`, true);
   } catch (err) {
     const status = err instanceof api.ApiError ? err.status : 0;
-    if (status === 401) { user = null; showUser(); claimDialog.close(); openAuth('login', 'Your session ended. Please sign in again.'); }
+    if (status === 401) { user = null; redirectClaim(); }
     else if (status === 409) showMessage(msg, 'Someone got there first! Another discovery is already within 1 arcsecond of this spot. Try a different position.');
     else showMessage(msg, (err as Error).message);
   } finally {
@@ -222,31 +207,7 @@ function bindEvents(): void {
     if (t.closest('[data-close]')) t.closest('dialog')?.close();
     if (t instanceof HTMLDialogElement) t.close(); // click on the dark backdrop
   });
-  el('signin-btn').addEventListener('click', () => openAuth('login'));
-  el('tab-login').addEventListener('click', () => openAuth('login'));
-  el('tab-register').addEventListener('click', () => openAuth('register'));
-  el('signout-btn').addEventListener('click', async () => { await auth.logout(); user = null; showUser(); });
   el('claim-form').addEventListener('submit', (e) => void handleClaimSubmit(e as SubmitEvent));
-
-  el('auth-form').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const username = el<HTMLInputElement>('a-user').value.trim();
-    const password = el<HTMLInputElement>('a-pass').value;
-    const button = el<HTMLButtonElement>('auth-submit');
-    if (password.length < 8) { showMessage(el('auth-msg'), 'Your password needs at least 8 characters.'); return; }
-    button.disabled = true;
-    try {
-      await (authMode === 'login' ? auth.login(username, password) : auth.register(username, password));
-      user = await auth.getCurrentUser();
-      showUser();
-      (e.target as HTMLFormElement).reset();
-      authDialog.close();
-    } catch (err) {
-      showMessage(el('auth-msg'), (err as Error).message);
-    } finally {
-      button.disabled = false;
-    }
-  });
 
   el('guide-btn').addEventListener('click', () => { guideStep = 0; showGuideStep(); guideDialog.showModal(); });
   el('guide-prev').addEventListener('click', () => { guideStep--; showGuideStep(); });
@@ -255,15 +216,40 @@ function bindEvents(): void {
 
 async function init(): Promise<void> {
   bindEvents();
+  el('load-more').onclick = async () => {
+    const button = el<HTMLButtonElement>('load-more');
+    button.disabled = true;
+    try {
+      const page = await api.getDiscoveries(discoveries.length);
+      const known = new Set(discoveries.map((d) => d.id));
+      discoveries.push(...page.filter((d) => !known.has(d.id)));
+      button.hidden = page.length < 50;
+      renderAll();
+    } catch (error) { showMessage(el('status'), (error as Error).message); }
+    finally { button.disabled = false; }
+  };
   renderAll(); // draws the empty shell straight away
-  const [, currentUser] = await Promise.all([loadData(), auth.getCurrentUser()]);
+  const [, currentUser] = await Promise.all([loadData(), auth.initSessionUI((value) => { user = value; })]);
   user = currentUser;
-  showUser();
+  window.setInterval(async () => {
+    if (document.hidden || !discoveries.some((d) => !d.classification || d.classification.error)) return;
+    try {
+      const refreshed: api.Discovery[] = [];
+      for (let offset = 0; offset < discoveries.length; offset += 100) {
+        refreshed.push(...await api.getDiscoveries(offset, 100));
+      }
+      const byId = new Map(refreshed.map((d) => [d.id, d]));
+      discoveries = discoveries.map((d) => byId.get(d.id) ?? d);
+      renderAll();
+    } catch { /* The next poll retries without interrupting a claim. */ }
+  }, 15000);
 
   // Links like /catalog?ra=252.88&dec=-35.33 open the claim form pre-filled.
   const params = new URLSearchParams(location.search);
   const ra = params.get('ra'), dec = params.get('dec');
-  if (ra !== null && dec !== null && !Number.isNaN(Number(ra)) && !Number.isNaN(Number(dec))) openClaim(ra, dec);
+  el<HTMLInputElement>('c-name').value = params.get('name') ?? '';
+  if (params.has('claim')) openClaim(ra ?? undefined, dec ?? undefined);
+  else if (ra !== null && dec !== null && !Number.isNaN(Number(ra)) && !Number.isNaN(Number(dec))) openClaim(ra, dec);
 }
 
 void init();

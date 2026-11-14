@@ -1,5 +1,5 @@
 import { API_BASE, fetchJson } from './api';
-import A from 'aladin-lite';
+import { initSessionUI } from './auth';
 import { SKY_SURVEY } from './config';
 import { readExplorerUrlState } from './urlState';
 import { surveyReachable } from './survey';
@@ -8,24 +8,6 @@ interface Band { url: string; array: number; em_min_um: number; em_max_um: numbe
 interface Exposure { t_iso: string; bands: Band[] }
 
 export function initExplorer(): void {
-  document.body.innerHTML = `<main class="mx-auto max-w-5xl space-y-6 px-4 py-8">
-    <a href="/" class="btn">← Back to sky map</a>
-    <h1 class="font-display text-3xl font-bold text-white">SPHEREx Explorer</h1>
-    <p id="coordinates" class="text-slate-400"></p>
-    <p id="explorer-status" role="status" aria-live="polite" class="flex items-center gap-3">
-      <svg id="loading-spinner" class="h-5 w-5 animate-spin text-emerald-400" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="3" opacity=".25"/><path d="M21 12a9 9 0 0 0-9-9" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>
-      <span id="status-text">Searching SPHEREx observations…</span>
-    </p>
-    <div id="controls" hidden class="flex flex-wrap gap-4">
-      <label>Observation <select id="epoch" class="ml-2 rounded bg-slate-800 p-2 text-white"></select></label>
-      <label>Detector band <select id="band" class="ml-2 rounded bg-slate-800 p-2 text-white"></select></label>
-    </div>
-    <img id="frame" class="max-h-[75vh] w-full object-contain" hidden alt="SPHEREx observation" />
-    <div id="fallback" hidden>
-      <p id="fallback-label" class="mb-3 rounded-lg border border-amber-400/30 bg-amber-400/10 p-3 text-sm text-amber-200"></p>
-      <div id="fallback-map" class="h-[28rem] w-full overflow-hidden rounded-xl border border-slate-800"></div>
-    </div>
-  </main>`;
   const coordinates = document.getElementById('coordinates')!;
   const status = document.getElementById('explorer-status')!;
   const statusText = document.getElementById('status-text')!;
@@ -38,6 +20,11 @@ export function initExplorer(): void {
   const fallbackLabel = document.getElementById('fallback-label')!;
   const state = readExplorerUrlState();
   const { ra, dec } = state;
+  const claim = document.createElement('a');
+  claim.className = 'btn';
+  claim.href = `/catalog?ra=${ra}&dec=${dec}`;
+  claim.textContent = 'Claim this position';
+  coordinates.after(claim);
   coordinates.textContent = `RA ${ra.toFixed(5)}°, Dec ${dec.toFixed(5)}°`;
   let request = 0;
   let fallbackStarted = false;
@@ -57,6 +44,7 @@ export function initExplorer(): void {
     fallbackStarted = true;
     try {
       if (!(await surveyReachable())) throw new Error('survey unavailable');
+      const { default: A } = await import('aladin-lite');
       await A.init;
       A.aladin('#fallback-map', {
         survey: SKY_SURVEY,
@@ -128,3 +116,6 @@ export function initExplorer(): void {
   }
   void load();
 }
+
+initExplorer();
+void initSessionUI();

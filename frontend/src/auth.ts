@@ -32,3 +32,35 @@ export async function logout(): Promise<void> {
   localStorage.removeItem(STORAGE_KEYS.authToken);
   if (token) await api.logout(token).catch(() => undefined);
 }
+
+export function safeNext(next: string | null): string {
+  if (!next || !next.startsWith('/') || next.startsWith('//') || /[\\\x00-\x20]/.test(next)) return '/catalog';
+  return next;
+}
+
+export function signinUrl(next = location.pathname + location.search): string {
+  return `/signin?${new URLSearchParams({ next: safeNext(next) })}`;
+}
+
+export async function initSessionUI(onChange?: (user: string | null) => void): Promise<string | null> {
+  const container = document.getElementById('session-ui')!;
+  const user = await getCurrentUser();
+  container.replaceChildren();
+  if (user) {
+    const label = document.createElement('span');
+    label.textContent = `@${user}`;
+    const button = document.createElement('button');
+    button.className = 'btn';
+    button.textContent = 'Sign out';
+    button.onclick = async () => { await logout(); await initSessionUI(onChange); };
+    container.append(label, button);
+  } else {
+    const link = document.createElement('a');
+    link.href = signinUrl();
+    link.className = 'btn';
+    link.textContent = 'Sign in';
+    container.append(link);
+  }
+  onChange?.(user);
+  return user;
+}
