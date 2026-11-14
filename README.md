@@ -30,6 +30,17 @@ uv run uvicorn app.main:app --reload --port 8000
 
 Uses SQLite in `backend/storage/` by default.
 
+### Frontend dev
+
+```bash
+cd frontend
+npm ci
+npm run dev
+```
+
+Vite runs on http://localhost:5173 and proxies API requests to `localhost:8000`.
+Set `VITE_API_BASE_URL` to point at a different backend.
+
 ## Endpoints
 
 | Path | What it does | Auth |

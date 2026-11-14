@@ -13,6 +13,8 @@
 import './styles.css';
 import { initGuide } from './guide/guide';
 import { initSkyMap } from './sky-map';
+import { initTargetBar } from './targetBar';
 
 initSkyMap();
 initGuide();
+void initTargetBar();
