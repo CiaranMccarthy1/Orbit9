@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app import config
 from app.database import init_db
-from app.api import routes_combine, routes_frames, routes_render, routes_targets
+from app.api import routes_combine, routes_frames, routes_render, routes_targets, routes_users, routes_discoveries
 from app.scripts.seed import seed_targets
 
 # StaticFiles validates directory existence at mount time, before lifespan runs
@@ -27,6 +27,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(routes_users.router)
+app.include_router(routes_discoveries.router)
 app.include_router(routes_targets.router)
 app.include_router(routes_frames.router)
 app.include_router(routes_render.router)

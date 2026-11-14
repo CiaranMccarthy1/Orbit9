@@ -68,3 +68,17 @@ curl -G localhost:8000/photometry --data-urlencode "ra=269.452" \
 ## Config
 
 Copy `.env.example` and adjust: `DATABASE_URL`, `STORAGE_DIR`, `CORS_ORIGINS`.
+
+## Accounts and discoveries
+
+Register with `POST /register` and log in with `POST /login`, using JSON
+`{"username":"observer", "password":"at-least-8-characters"}`. Login returns a
+bearer token valid for seven days. Send it in `Authorization: Bearer <token>`
+to use `GET /me`, `POST /logout`, and `POST /discoveries`. A discovery accepts
+JSON such as `{"name":"New world", "ra":12.3, "dec":-4.5}`. Anyone can
+read `GET /discoveries`. The first claim within one arcsecond wins.
+
+To reset the database, stop the API first. For local SQLite, remove
+`backend/storage/app.db` and restart the API. For Docker, run
+`docker compose down -v` and then `docker compose up`. These commands delete
+all database records; startup recreates the tables and preset targets.
