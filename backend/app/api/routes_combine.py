@@ -30,7 +30,7 @@ def combine_frames(mode: str, urls: str):
     if mode not in MODES:
         raise HTTPException(400, f"mode must be one of {MODES}")
     url_list = _urls(urls)
-    key = spec_key("combine", "v2", mode, *url_list)
+    key = spec_key("combine", "v3", mode, *url_list)
     png_path = _png_for(key)
 
     def build():
