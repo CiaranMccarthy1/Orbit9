@@ -2,7 +2,7 @@
 
 import numpy as np
 
-from app.cache import ensure_fits
+from app.cache import cached_fits
 from app.pipeline.grouping import group_exposures
 from app.pipeline.irsa_fetcher import fetch_epochs
 from app.pipeline.photometry import aperture_flux
@@ -67,10 +67,10 @@ def fit_astrometry(points):
     """points = [(mjd, ra_deg, dec_deg)] -> parallax/PM by sinusoid lstsq.
 
     shortcut: pure sinusoid parallax basis, unweighted, no epoch-uncertainty
-    propagation; >=4 well-spread epochs needed (3 is fully determined and
-    would return a fake parallax).
+    propagation; >=5 well-spread epochs needed: four fit the four coefficients exactly
+    and cannot reveal scatter through a residual.
     """
-    if len(points) < 4 or len({p[0] for p in points}) < 4:
+    if len(points) < 5 or len({p[0] for p in points}) < 5:
         return None
     t = np.array([p[0] for p in points], float)
     ra = np.array([p[1] for p in points], float)
@@ -111,15 +111,14 @@ def approx_luminosity_solar(band, parallax_arcsec):
     return float(4 * np.pi * distance_m ** 2 * flux_wm2 * (nu_max - nu_min) / LSUN_W)
 
 
-def classify(candidate):
-    """Decision tree from the spec's stage 4.
-
-    Thresholds are the spec's, adapted where the data cannot reach them:
-    `valid_bands < 2` instead of the spec's <5 because DR1 serves far fewer
-    bands per exposure than the assumed 102.
-    """
-    if candidate["valid_bands"] < 2:
-        return {"classification": "Artifact / Cosmic Ray", "confidence": 0.99}
+def _classify(candidate):
+    """Indicative photometric/astrometric labels; missing data is not artifact evidence."""
+    if candidate["valid_bands"] == 0:
+        return {"classification": "No usable photometry", "confidence": 0.0}
+    if candidate["valid_bands"] == 1:
+        return {"classification": "Insufficient photometry (one usable band)", "confidence": 0.0}
+    if candidate.get("astrometric_residual_arcsec", 0) > 1:
+        return {"classification": "Unreliable astrometry", "confidence": 0.0}
     parallax = candidate["parallax_arcsec"]
     pm = candidate["proper_motion_arcsec_yr"]
     t_eff = candidate["t_eff_k"]
@@ -141,10 +140,17 @@ def classify(candidate):
     return {"classification": "High-Proper-Motion Star", "confidence": 0.89}
 
 
+def classify(candidate):
+    verdict = _classify(candidate)
+    # shortcut: heuristic scores, calibrate against labelled sources before scientific use.
+    verdict["confidence"] = min(verdict["confidence"], 0.6 if candidate["valid_bands"] < 3 else 0.9)
+    return verdict
+
+
 def classify_claim(ra, dec, epochs=()):
     """Fetch SPHEREx bands at the position, measure, fit and classify.
 
-    epochs: clicked positions [{"mjd", "ra", "dec"}] (>=4 enables parallax).
+    epochs: clicked positions [{"mjd", "ra", "dec"}] (>=5 enables parallax).
     """
     exposures = group_exposures(fetch_epochs(ra, dec, SEARCH_RADIUS_DEG))
     if not exposures:
@@ -156,7 +162,7 @@ def classify_claim(ra, dec, epochs=()):
             return 0.0
         return min(abs(exposure["t_min_mjd"] - c["mjd"]) for c in clicks)
 
-    picked = sorted(exposures, key=time_gap)[:MAX_EXPOSURES]
+    picked = sorted(exposures, key=time_gap)[:MAX_EXPOSURES] if clicks else exposures[-MAX_EXPOSURES:]
     bands = []
     for exposure in picked:
         for band in sorted(exposure["bands"], key=lambda b: b["em_min_um"]):
@@ -171,7 +177,8 @@ def classify_claim(ra, dec, epochs=()):
             position = (click["ra"], click["dec"])
         else:
             position = (ra, dec)
-        m = aperture_flux(ensure_fits(band["url"]), *position)
+        with cached_fits(band["url"]) as paths:
+            m = aperture_flux(paths[0], *position)
         if m is None:
             continue
         measured.append({
@@ -184,7 +191,7 @@ def classify_claim(ra, dec, epochs=()):
         })
 
     valid = [m for m in measured if m["flux"] > 0 and m["flagged_fraction"] < 0.5]
-    astro = fit_astrometry([(c["mjd"], c["ra"], c["dec"]) for c in clicks]) if len(clicks) >= 4 else None
+    astro = fit_astrometry([(c["mjd"], c["ra"], c["dec"]) for c in clicks]) if len(clicks) >= 5 else None
     wavelengths = [m["center_um"] for m in valid]
     fluxes = [m["flux"] for m in valid]
     t_eff = fit_blackbody_temp(wavelengths, fluxes) if len(valid) >= 2 else None
@@ -193,6 +200,7 @@ def classify_claim(ra, dec, epochs=()):
 
     verdict = classify({
         "valid_bands": len(valid),
+        "astrometric_residual_arcsec": astro["residual_arcsec"] if astro else 0.0,
         "parallax_arcsec": astro["parallax_arcsec"] if astro else None,
         "proper_motion_arcsec_yr": astro["pm_arcsec_yr"] if astro else None,
         "t_eff_k": t_eff,

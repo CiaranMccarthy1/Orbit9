@@ -3,7 +3,7 @@ from pathlib import Path
 from fastapi import APIRouter, HTTPException
 
 from app import config
-from app.cache import ensure_fits, ensure_render
+from app.cache import cached_fits, ensure_render
 from app.pipeline.combine import MODES, combine
 from app.pipeline.photometry import aperture_median, flag_stats
 from app.pipeline.rgb_composer import compose_rgb
@@ -35,7 +35,8 @@ def combine_frames(mode: str, urls: str):
 
     def build():
         try:
-            combine(mode, [ensure_fits(u) for u in url_list], png_path)
+            with cached_fits(*url_list) as paths:
+                combine(mode, paths, png_path)
         except ValueError as e:
             raise HTTPException(400, str(e))
 
@@ -50,9 +51,11 @@ def rgb(r: str, g: str, b: str):
         validate(u)
     key = spec_key("rgb", r, g, b)
     png_path = _png_for(key)
-    png, cached = ensure_render(
-        key, png_path,
-        lambda: compose_rgb(ensure_fits(r), ensure_fits(g), ensure_fits(b), png_path))
+    def build():
+        with cached_fits(r, g, b) as paths:
+            compose_rgb(paths[0], paths[1], paths[2], png_path)
+
+    png, cached = ensure_render(key, png_path, build)
     return {"png": png, "cached": cached}
 
 
@@ -64,7 +67,8 @@ def photometry(ra: float, dec: float, urls: str):
     url_list = _urls(urls)
     results = []
     for u in url_list:
-        m = aperture_median(ensure_fits(u), ra, dec)
+        with cached_fits(u) as paths:
+            m = aperture_median(paths[0], ra, dec)
         results.append({"url": u, **(m or {"median": None, "n_pixels": 0})})
     return {"ra": ra, "dec": dec, "measurements": results}
 
@@ -73,4 +77,5 @@ def photometry(ra: float, dec: float, urls: str):
 def flags(url: str):
     """FLAGS bit counts and VARIANCE summary for one frame."""
     validate(url)
-    return flag_stats(ensure_fits(url))
+    with cached_fits(url) as paths:
+        return flag_stats(paths[0])
