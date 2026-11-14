@@ -35,7 +35,10 @@ app.include_router(routes_targets.router)
 app.include_router(routes_frames.router)
 app.include_router(routes_render.router)
 
-app.mount("/storage", StaticFiles(directory=config.STORAGE_DIR), name="storage")
+# only rendered PNGs are public; fits_raw/ and the sqlite db stay private
+app.mount("/storage/png_renders",
+          StaticFiles(directory=str(Path(config.STORAGE_DIR, "png_renders"))),
+          name="storage")
 
 
 @app.get("/health")

@@ -1,8 +1,7 @@
 .venv
 *node_modules/
 pycache/
-backend/app/pipeline/*
-backend/app/__pycache__/*
+backend/storage/
 __pycache__/
 *.py[cod]
 .venv/
