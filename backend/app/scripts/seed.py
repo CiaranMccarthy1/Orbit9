@@ -1,30 +1,20 @@
 from app.database import SessionLocal
 from app.models import Target
 
-# resolved by name at seed time (one network lookup, cached in Postgres);
-# Epsilon Indi preset points at the A star, Ba/Bb sit arcminutes away
-PRESET_NAMES = [
-    "Barnard's Star",
-    "Epsilon Indi",
-    "WISE J085510.83-071442.5",
-    "RW Aurigae",
-    "R Draconis",
-]
+# J2000 coordinates resolved once via Sesame and frozen here, so startup
+# never depends on the network and a partial resolve can't lose presets
+PRESETS = (
+    ("Barnard's Star", 269.4520769586187, 4.69336496657667),
+    ("Epsilon Indi", 330.8402234423433, -56.78597855436499),  # A star; Ba/Bb arcminutes away
+    ("WISE J085510.83-071442.5", 133.81890825, -7.247048),
+    ("RW Aurigae", 76.95652603458, 30.40143817389),
+    ("R Draconis", 248.16761083295, 66.75497941722),
+)
 
 
 def seed_targets():
-    from astropy.coordinates import SkyCoord
-
     with SessionLocal() as db:
-        if db.query(Target).first():
-            return
-        for name in PRESET_NAMES:
-            try:
-                c = SkyCoord.from_name(name)
-            except Exception as e:  # one bad name must not block startup
-                print(f"seed: could not resolve {name!r}: {e}")
-                continue
-            if c is None or c.ra is None or c.dec is None:
-                continue
-            db.add(Target(name=name, ra=c.ra.deg, dec=c.dec.deg))
+        existing = {t.name for t in db.query(Target)}
+        db.add_all(Target(name=n, ra=ra, dec=dec)
+                   for n, ra, dec in PRESETS if n not in existing)
         db.commit()

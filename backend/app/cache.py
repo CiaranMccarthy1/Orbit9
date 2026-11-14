@@ -8,9 +8,25 @@ from app.pipeline.irsa_fetcher import download_fits
 from app.urls import url_key
 
 
+def evict_old_fits():
+    """Delete least-recently-used FITS until fits_raw/ is under MAX_RAW_GB."""
+    if config.MAX_RAW_GB <= 0:
+        return
+    raw = Path(config.STORAGE_DIR, "fits_raw")
+    files = sorted(raw.glob("*.fits"), key=lambda p: p.stat().st_mtime)
+    total = sum(p.stat().st_size for p in files)
+    while files and total > config.MAX_RAW_GB * 1e9:
+        p = files.pop(0)
+        total -= p.stat().st_size
+        p.unlink(missing_ok=True)
+
+
 def ensure_fits(url):
     path = Path(config.STORAGE_DIR, "fits_raw", f"{url_key(url)}.fits")
-    if not path.exists():
+    if path.exists():
+        path.touch()  # refresh LRU age
+    else:
+        evict_old_fits()
         download_fits(url, path)
     return path
 
