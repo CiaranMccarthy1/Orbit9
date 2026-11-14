@@ -4,6 +4,7 @@ Verified against IRSA live (2026-11): collection 'spherex_dr1', each SIA row is
 one band/level2b product with access_url to the IRSA IBE data service.
 """
 from pathlib import Path
+from typing import TypedDict
 
 from astropy.utils.data import conf
 
@@ -15,24 +16,47 @@ from astroquery.ipac.irsa import Irsa  # noqa: E402
 COLLECTION = "spherex_dr1"
 
 
-def fetch_epochs(ra: float, dec: float, radius_deg: float = 0.1) -> list[dict]:
+class Epoch(TypedDict):
+    obs_id: str
+    access_url: str
+    size_kb: int
+    exptime: float
+    em_min_um: float
+    em_max_um: float
+    res_power: float
+    res_arcsec: float
+    t_min: float
+    t_max: float
+
+
+def fetch_epochs(ra: float, dec: float, radius_deg: float = 0.1) -> list[Epoch]:
     """All science products covering a position. One row = one band of one exposure."""
     t = Irsa.query_sia(pos=(ra, dec, radius_deg), collection=COLLECTION)
     t = t[t["dataproduct_subtype"] == "science"]
+    # column lists keep astropy's loose Row typing out of the hot path
+    cols = {
+        c: t[c].tolist()
+        for c in (
+            "obs_id", "access_url", "access_estsize", "t_exptime", "em_min",
+            "em_max", "em_res_power", "s_resolution", "t_min", "t_max",
+        )
+    }
     return [
-        {
-            "obs_id": r["obs_id"],
-            "access_url": r["access_url"],
-            "size_kb": int(r["access_estsize"]),
-            "exptime": float(r["t_exptime"]),
-            "em_min_um": float(r["em_min"]) * 1e6,
-            "em_max_um": float(r["em_max"]) * 1e6,
-            "res_power": float(r["em_res_power"]),
-            "res_arcsec": float(r["s_resolution"]),
-            "t_min": float(r["t_min"]),
-            "t_max": float(r["t_max"]),
-        }
-        for r in t
+        Epoch(
+            obs_id=obs_id,
+            access_url=access_url,
+            size_kb=int(size_kb),
+            exptime=float(exptime),
+            em_min_um=float(em_min) * 1e6,
+            em_max_um=float(em_max) * 1e6,
+            res_power=float(res_power),
+            res_arcsec=float(res_arcsec),
+            t_min=float(t_min),
+            t_max=float(t_max),
+        )
+        for obs_id, access_url, size_kb, exptime, em_min, em_max,
+            res_power, res_arcsec, t_min, t_max
+        in zip(*cols.values())
     ]
 
 
