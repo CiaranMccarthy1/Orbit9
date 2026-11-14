@@ -1,1 +1,6 @@
 .venv
+node_modules/
+pycache/
+backend/app/pipeline/__pycache__/__init__.cpython-312.pyc
+backend/app/pipeline/__pycache__/irsa_fetcher.cpython-312.pyc
+backend/app/__pycache__/__init__.cpython-312.pyc

@@ -1,0 +1,9 @@
+services:
+  api:
+    image: orbit9-api
+    ports:
+      - "8000:8000"
+    environment:
+      - CORS_ORIGINS=http://localhost:5173
+    volumes:
+      - ./backend/storage:/app/storage
