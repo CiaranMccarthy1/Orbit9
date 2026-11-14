@@ -57,3 +57,6 @@ class Discovery(Base):
     discovered_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     # filled in the background after the claim is accepted
     classification: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+
+    epochs: Mapped[list | None] = mapped_column(JSON, nullable=True)
+    retry_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, default=utcnow)

@@ -57,6 +57,7 @@ def register(data: Credentials):
 
 @router.post("/login")
 def login(data: Credentials):
+    cleanup_sessions()
     with SessionLocal() as db:
         user = db.query(User).filter_by(username=data.username).first()
         salt, expected = user.password_hash.split(":") if user else ("00" * 16, "00" * 64)
@@ -78,4 +79,10 @@ def me(session=Depends(current_session)):
 def logout(session=Depends(current_session)):
     with SessionLocal() as db:
         db.query(LoginSession).filter_by(token_hash=session[2]).delete()
+        db.commit()
+
+
+def cleanup_sessions():
+    with SessionLocal() as db:
+        db.query(LoginSession).filter(LoginSession.expires_at <= utcnow()).delete()
         db.commit()
