@@ -1,4 +1,6 @@
 """FITS → PNG: ZODI-subtract, ZScale stretch, 8-bit output."""
+import os
+import tempfile
 from pathlib import Path
 
 import numpy as np
@@ -14,10 +16,22 @@ def stretch(data):
     return np.clip(np.nan_to_num((data - vmin) / span), 0, 1)
 
 
-def save_gray(data, png_path):
+def save_image(img, png_path):
+    """Atomic PNG write: two builders of the same key can't interleave bytes."""
     png_path.parent.mkdir(parents=True, exist_ok=True)
-    Image.fromarray((stretch(data) * 255).astype(np.uint8)).save(png_path)
+    fd, tmp = tempfile.mkstemp(dir=png_path.parent, suffix=".png")
+    try:
+        with os.fdopen(fd, "wb") as f:
+            img.save(f, format="PNG")
+        os.replace(tmp, png_path)
+    except BaseException:
+        os.unlink(tmp)
+        raise
     return png_path
+
+
+def save_gray(data, png_path):
+    return save_image(Image.fromarray((stretch(data) * 255).astype(np.uint8)), png_path)
 
 
 def render_png(fits_path, png_path):
