@@ -5,6 +5,7 @@ from PIL import Image
 from app.pipeline.combine import combine
 from app.pipeline.grouping import array_of
 from app.pipeline.photometry import aperture_median, flag_stats
+from app.pipeline.png_renderer import save_image
 
 WCS_CARDS = dict(CTYPE1="RA---TAN", CTYPE2="DEC--TAN", CUNIT1="deg",
                  CUNIT2="deg", CRVAL1=10.0, CRVAL2=20.0,
@@ -60,3 +61,22 @@ def test_array_mapping_matches_spherex_ranges():
     assert array_of(1.63, 2.43) == 3   # observed DR1 band
     assert array_of(4.41, 5.01) == 6   # observed DR1 band
     assert array_of(2.5, 3.5) == 4
+
+
+def test_concurrent_png_writes_leave_valid_file(tmp_path):
+    import threading
+
+    from PIL import Image as PILImage
+
+    out = tmp_path / "race.png"
+    imgs = [PILImage.fromarray(np.full((64, 64), v, dtype=np.uint8)) for v in (40, 200)]
+    threads = [threading.Thread(target=lambda im=im: [save_image(im, out) for _ in range(20)])
+               for im in imgs]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+    result = np.asarray(PILImage.open(out))
+    assert result.shape == (64, 64)
+    assert set(np.unique(result)).issubset({40, 200})
+    assert len(np.unique(result)) == 1  # never a torn mix of the two images

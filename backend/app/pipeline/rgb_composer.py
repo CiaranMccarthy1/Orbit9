@@ -3,7 +3,7 @@ import numpy as np
 from PIL import Image
 
 from app.pipeline.imaging import load_aligned
-from app.pipeline.png_renderer import stretch
+from app.pipeline.png_renderer import save_image, stretch
 
 
 def compose_rgb(red_path, green_path, blue_path, png_path):
@@ -11,6 +11,4 @@ def compose_rgb(red_path, green_path, blue_path, png_path):
     arrays, _ = load_aligned([red_path, green_path, blue_path])
     channels = [stretch(a) for a in arrays]
     rgb = (np.stack(channels, axis=-1) * 255).astype(np.uint8)
-    png_path.parent.mkdir(parents=True, exist_ok=True)
-    Image.fromarray(rgb, mode="RGB").save(png_path)
-    return png_path
+    return save_image(Image.fromarray(rgb, mode="RGB"), png_path)
