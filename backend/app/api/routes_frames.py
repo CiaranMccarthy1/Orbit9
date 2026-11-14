@@ -15,6 +15,8 @@ def _cache_key(ra, dec, radius):
 @router.get("/frames")
 def frames(ra: float, dec: float, radius: float = 0.1):
     """Exposures (epochs) covering a position, from IRSA cache or live."""
+    if not (0 <= ra <= 360) or not (-90 <= dec <= 90):
+        raise HTTPException(400, "ra must be in [0, 360] deg, dec in [-90, 90] deg")
     if not 0 < radius <= 5:
         raise HTTPException(400, "radius must be in (0, 5] deg")
     key = _cache_key(ra, dec, radius)
@@ -24,7 +26,8 @@ def frames(ra: float, dec: float, radius: float = 0.1):
             products = hit.products
         else:
             products = fetch_epochs(ra, dec, radius)
-            db.add(FrameCache(key=key, products=products))
+            # merge: concurrent cache misses race on the same key
+            db.merge(FrameCache(key=key, products=products))
             db.commit()
     exposures = group_exposures(products)
     return {"ra": ra, "dec": dec, "radius": radius,
