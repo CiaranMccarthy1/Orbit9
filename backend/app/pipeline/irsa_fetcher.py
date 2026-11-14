@@ -15,8 +15,8 @@ from astroquery.ipac.irsa import Irsa  # noqa: E402
 COLLECTION = "spherex_dr1"
 
 EPOCH_COLS = (
-    "obs_id", "access_url", "access_estsize", "t_exptime", "em_min",
-    "em_max", "em_res_power", "s_resolution", "t_min", "t_max",
+    "obs_id", "access_url", "access_estsize", "em_min",
+    "em_max", "em_res_power", "s_resolution", "t_min",
 )
 
 
@@ -30,16 +30,14 @@ def fetch_epochs(ra, dec, radius_deg=0.1):
             "obs_id": obs_id,
             "access_url": access_url,
             "size_kb": int(size_kb),
-            "exptime": float(exptime),
             "em_min_um": float(em_min) * 1e6,
             "em_max_um": float(em_max) * 1e6,
             "res_power": float(res_power),
             "res_arcsec": float(res_arcsec),
             "t_min": float(t_min),
-            "t_max": float(t_max),
         }
-        for obs_id, access_url, size_kb, exptime, em_min, em_max,
-            res_power, res_arcsec, t_min, t_max
+        for obs_id, access_url, size_kb, em_min, em_max,
+            res_power, res_arcsec, t_min
         in zip(*cols.values())
     ]
 
