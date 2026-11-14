@@ -1,9 +1,35 @@
-.venv
-*node_modules/
-pycache/
-backend/storage/
+# Python / Backend
+.venv/
+venv/
 __pycache__/
 *.py[cod]
-.venv/
-app.db
 .pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# SPHEREx Runtime Storage & Local DB (do not commit 60MB FITS or cached PNGs)
+fits_raw/
+png_renders/
+storage/
+*.db
+*.sqlite
+*.sqlite3
+
+# Frontend (Node / Vite / TypeScript)
+node_modules/
+dist/
+dist-ssr/
+*.local
+*.tsbuildinfo
+.eslintcache
+.stylelintcache
+
+# Local scratch notes
+NOTES.md
+
+# Environment & OS
+.env
+.env.*
+!.env.example
+.DS_Store
+Thumbs.db
