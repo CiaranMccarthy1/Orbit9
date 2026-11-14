@@ -3,74 +3,150 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Planet X: Sky Explorer</title>
+  <title>Orbit9: Sky Explorer</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Sora:wght@500;600;700&display=swap" rel="stylesheet" />
 </head>
 <body class="bg-slate-950 font-sans text-slate-300 antialiased">
-  <div class="mx-auto max-w-[90rem] px-4 py-6 sm:px-6 lg:px-8">
+
+  <!-- Element ids are a contract with the scripts: src/guide/guide.ts,
+       src/sky-map.ts and src/speech.ts look them up by id. If you rename
+       an id here, update the matching TypeScript file too. -->
+
+  <!-- INTRO GUIDE: a dialog shown before the homepage. Behaviour lives in src/guide/guide.ts. -->
+  <div id="guide-modal" role="dialog" aria-modal="true" aria-labelledby="guide-heading"
+       class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 p-4 backdrop-blur-md sm:p-6">
+    <div class="card relative max-h-[92vh] w-full max-w-5xl animate-modal-enter overflow-y-auto border-emerald-400/30 bg-slate-900 p-6 shadow-2xl shadow-emerald-950/40 sm:p-8">
+
+      <!-- Top bar -->
+      <div class="mb-6 flex flex-wrap items-center justify-between gap-4 border-b border-slate-800 pb-4">
+        <div>
+          <p class="text-xs font-semibold uppercase tracking-wider text-emerald-400">Orbit9 Interactive Field Guide</p>
+          <h1 id="guide-heading" class="font-display text-xl font-bold text-white sm:text-2xl">How to Spot Planets &amp; Stars</h1>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-3">
+          <div id="step-dots" class="flex items-center gap-2" role="group" aria-label="Tutorial steps"></div>
+          <button id="change-voice" type="button" hidden class="rounded-xl border border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:border-emerald-400 hover:text-emerald-400">🎙 Change voice</button>
+          <button id="toggle-sound" type="button" aria-pressed="true" class="rounded-xl border border-emerald-400/50 bg-emerald-400/10 px-3 py-1.5 text-xs font-medium text-emerald-300 transition hover:bg-emerald-400 hover:text-slate-950"></button>
+          <button id="skip-guide" type="button" class="rounded-xl border border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:border-emerald-400 hover:text-emerald-400">Skip to Homepage ✕</button>
+        </div>
+      </div>
+
+      <div class="grid items-center gap-8 lg:grid-cols-[17rem_minmax(0,1fr)]">
+        <!-- Left: animated guide character and speech bubble -->
+        <div class="flex flex-col items-center text-center lg:items-start lg:text-left">
+          <div class="relative mb-4 flex items-end justify-center">
+            <svg id="teacher-avatar" viewBox="0 0 140 150" class="h-32 w-32 motion-safe:animate-teacher-bob sm:h-36 sm:w-36" role="img" aria-label="Animated astronomy guide">
+              <circle cx="70" cy="78" r="56" fill="#10b981" fill-opacity="0.12" />
+              <!-- Shoulders and lab coat -->
+              <path d="M26 144 C26 114, 114 114, 114 144 Z" fill="#1e293b" stroke="#334155" stroke-width="2" />
+              <path d="M56 116 L70 138 L84 116" fill="none" stroke="#34d399" stroke-width="2.5" stroke-linejoin="round" />
+              <!-- Head and hair -->
+              <circle cx="70" cy="74" r="28" fill="#fde68a" />
+              <path d="M42 70 C42 42, 98 42, 98 70 C94 54, 46 54, 42 70 Z" fill="#0f172a" />
+              <!-- Glasses -->
+              <rect x="49" y="66" width="17" height="12" rx="4" fill="#0f172a" fill-opacity="0.15" stroke="#34d399" stroke-width="2.2" />
+              <rect x="74" y="66" width="17" height="12" rx="4" fill="#0f172a" fill-opacity="0.15" stroke="#34d399" stroke-width="2.2" />
+              <line x1="66" y1="72" x2="74" y2="72" stroke="#34d399" stroke-width="2.2" />
+              <!-- Eyes (blink) -->
+              <g class="origin-[70px_72px] motion-safe:animate-teacher-blink">
+                <circle cx="57.5" cy="72" r="2.2" fill="#0f172a" />
+                <circle cx="82.5" cy="72" r="2.2" fill="#0f172a" />
+              </g>
+              <!-- Mouth: moves while the voice speaks (class toggled in speech.ts) -->
+              <ellipse id="teacher-mouth" class="teacher-mouth" cx="70" cy="87" rx="5" ry="2.2" fill="#0f172a" />
+              <!-- Waving hand -->
+              <g class="origin-[108px_118px] motion-safe:animate-teacher-wave">
+                <circle cx="112" cy="102" r="8" fill="#fde68a" />
+                <line x1="112" y1="102" x2="128" y2="82" stroke="#34d399" stroke-width="3" stroke-linecap="round" />
+              </g>
+            </svg>
+          </div>
+
+          <div id="speech-bubble" class="relative w-full rounded-2xl border border-emerald-400/40 bg-slate-950 p-4 text-left shadow-lg">
+            <div class="mb-1 flex items-center justify-between">
+              <span id="step-badge" class="text-xs font-semibold text-emerald-400"></span>
+              <button id="speak-step" type="button" class="text-[11px] font-medium text-emerald-300 hover:underline">▶ Listen</button>
+            </div>
+            <h2 id="step-title" class="font-display text-base font-semibold text-white"></h2>
+            <p id="step-text" class="mt-1.5 text-sm leading-relaxed text-slate-300"></p>
+          </div>
+        </div>
+
+        <!-- Right: picture with clickable markers, info card, step controls -->
+        <div class="space-y-4">
+          <div class="relative overflow-hidden rounded-2xl border border-slate-800 bg-slate-950">
+            <div id="scene-canvas" class="h-60 w-full sm:h-[17rem]"></div>
+            <div class="pointer-events-none absolute left-3 top-3 rounded-full border border-emerald-400/30 bg-slate-900/90 px-3 py-1 text-xs text-emerald-300">
+              Click any glowing marker to hear &amp; inspect NASA SPHEREx data
+            </div>
+          </div>
+
+          <div id="hotspot-card" aria-live="polite" class="rounded-2xl border border-slate-800 bg-slate-950/90 p-4">
+            <div class="flex items-center justify-between gap-2">
+              <span id="hotspot-tag" class="inline-block rounded-md bg-emerald-400/15 px-2 py-0.5 text-xs font-medium text-emerald-300"></span>
+              <span id="audio-hint" class="text-[11px] text-slate-500">Click a marker or Next for audio</span>
+            </div>
+            <h3 id="hotspot-title" class="mt-1 font-display text-sm font-semibold text-white"></h3>
+            <p id="hotspot-body" class="mt-1 text-sm text-slate-400"></p>
+          </div>
+
+          <div class="flex items-center justify-between pt-1">
+            <button id="prev-step" type="button" class="btn">← Back</button>
+            <div class="mx-4 h-1.5 flex-1 overflow-hidden rounded-full bg-slate-800">
+              <div id="step-progress" class="h-full w-0 bg-emerald-400 transition-all duration-300"></div>
+            </div>
+            <button id="next-step" type="button" class="btn border-emerald-400 bg-emerald-400/10 text-emerald-300">Next →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Start screen: browsers only allow sound after a click, so the guide waits for "Play". -->
+    <div id="start-screen" hidden class="absolute inset-0 z-10 flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-sm">
+      <div class="card w-full max-w-sm border-emerald-400/40 text-center shadow-2xl shadow-emerald-950/40">
+        <div id="start-avatar" class="flex justify-center"></div>
+        <div class="mt-3 rounded-2xl border border-emerald-400/40 bg-slate-950 p-4 text-left shadow-lg">
+          <p class="text-sm leading-relaxed text-slate-200">
+            Hi, I’m your sky guide! Turn your sound on and press the green <strong class="text-emerald-300">Play</strong> button, and I’ll show you how to spot planets and stars.
+          </p>
+        </div>
+        <button id="start-guide" type="button" class="btn mt-5 w-full border-emerald-400 bg-emerald-400 text-slate-950 hover:bg-emerald-300 hover:text-slate-950">▶ Play guide</button>
+        <button id="start-skip" type="button" class="mt-3 text-xs font-medium text-slate-400 hover:text-emerald-400 hover:underline">Skip to homepage</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- HOMEPAGE. Made `inert` (not clickable or focusable) while the guide is open. -->
+  <div id="app" class="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
     <header class="mb-8 flex items-center justify-between">
-      <a href="/" class="font-display text-lg font-semibold text-white">Planet <span class="text-emerald-400">X</span></a>
-      <a href="/explorer" class="btn">Open explorer</a>
+      <a href="/" class="font-display text-lg font-semibold text-white">Orbit<span class="text-emerald-400">9</span></a>
+      <div class="flex items-center gap-3">
+        <button id="replay-guide" type="button" class="btn">Replay guide</button>
+        <a href="/explorer" class="btn border-emerald-400/60 text-emerald-400">Open explorer</a>
+      </div>
     </header>
 
-    <main class="grid gap-8 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
-      <!-- LEFT: onboarding -->
-      <section aria-labelledby="guide-title">
-        <h2 id="guide-title" class="font-display text-xl font-semibold text-white">Find your first object in four steps</h2>
-        <ol id="steps" class="mt-4 space-y-4"></ol>
-      </section>
-
-      <!-- RIGHT: dashboard -->
-      <div class="min-w-0 space-y-8">
-        <section class="card grid gap-5 p-6 md:grid-cols-[minmax(0,1fr)_15rem] md:items-center" data-reveal="animate-fade-up">
-          <div>
-            <h1 class="font-display text-3xl font-bold leading-tight text-white sm:text-4xl">SKY EXPLORER: DISCOVER THE COSMOS</h1>
-            <p class="mt-3 max-w-prose text-slate-400">Browse the whole sky in infrared, then drop a pin to open that exact spot in the explorer with real SPHEREx data from NASA/IPAC IRSA.</p>
-            <a href="#sky-map" class="btn mt-5 border-emerald-400 text-emerald-400">Pick a spot on the map</a>
-          </div>
-          <figure>
-            <div class="pointer-events-none relative h-44 overflow-hidden rounded-2xl border border-slate-700">
-              <div id="preview-map" class="h-full w-full"></div>
-            </div>
-            <figcaption class="mt-2 text-xs text-slate-500">Live preview: Barnard’s Star, 0.5° field</figcaption>
-          </figure>
-        </section>
-
-        <section aria-label="Sky map" data-reveal="animate-fade-up">
-          <div class="relative overflow-hidden rounded-2xl border border-slate-800">
-            <div id="sky-map" class="h-[26rem] w-full sm:h-[32rem]"></div>
-            <p id="map-status" role="status" class="pointer-events-none absolute bottom-3 left-3 right-3 rounded-2xl bg-slate-950/85 px-4 py-2 text-sm text-slate-200 backdrop-blur">Click anywhere on the sky to open it in the explorer.</p>
-          </div>
-        </section>
-
-        <section class="card" data-reveal="animate-fade-up" aria-labelledby="how-title">
-          <h2 id="how-title" class="font-display text-xl font-semibold text-white">How do scientists find planets?</h2>
-          <div class="mt-4 grid gap-4 sm:grid-cols-3">
-            <div><h3 class="font-medium text-emerald-400">Transit</h3><p class="mt-1 text-sm text-slate-400">A planet crossing its star causes a tiny, repeating dip in brightness.</p></div>
-            <div><h3 class="font-medium text-emerald-400">Radial velocity</h3><p class="mt-1 text-sm text-slate-400">A planet’s pull makes its star wobble, shifting the star’s light toward red and blue.</p></div>
-            <div><h3 class="font-medium text-emerald-400">Direct imaging</h3><p class="mt-1 text-sm text-slate-400">Infrared light helps pick out warm, young planets and brown dwarfs next to a bright star.</p></div>
-          </div>
-        </section>
-
-        <section data-reveal="animate-fade-up" aria-labelledby="recent-title">
-          <h2 id="recent-title" class="font-display text-xl font-semibold text-white">Recent planet discoveries</h2>
-          <div id="discoveries" class="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4"></div>
-        </section>
-
-        <section data-reveal="animate-fade-up" aria-labelledby="stars-title">
-          <h2 id="stars-title" class="font-display text-xl font-semibold text-white">Star identification guide</h2>
-          <div id="stars" class="mt-4 grid gap-4 sm:grid-cols-2"></div>
-        </section>
+    <main class="space-y-10">
+     <!-- All-sky infrared map -->
+     <section aria-labelledby="map-heading" class="space-y-4">
+      <div>
+        <p class="text-xs font-semibold uppercase tracking-wider text-emerald-400">NASA/IPAC IRSA • All-Sky Infrared</p>
+        <h2 id="map-heading" class="font-display text-2xl font-bold text-white sm:text-3xl">Explore the Infrared Sky</h2>
+        <p class="mt-1 text-sm text-slate-400">Drag to pan, scroll to zoom, and click any object to drop a pin and query real SPHEREx data.</p>
       </div>
-    </main>
 
-    <footer class="mt-12 card p-6" aria-labelledby="journey-title">
-      <h2 id="journey-title" class="font-display text-lg font-semibold text-white">CONTINUE YOUR JOURNEY</h2>
-      <nav id="journey" class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5" aria-label="More to explore"></nav>
-    </footer>
-  </div>
-  <script type="module" src="/src/home.ts"></script>
+      <div class="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900">
+        <div id="sky-map" class="h-[28rem] w-full sm:h-[34rem]"></div>
+        <div role="status" class="flex flex-wrap items-center justify-between gap-3 border-t border-slate-800 bg-slate-950/90 px-4 py-3 text-sm text-slate-200">
+          <span id="status-text">Click anywhere on the sky to drop a pin.</span>
+          <a id="open-pin-btn" href="/explorer" hidden class="btn border-emerald-400 bg-emerald-400 text-slate-950 hover:bg-emerald-300 hover:text-slate-950">Open in Explorer →</a>
+        </div>
+      </div>
+    </section>
+    
+  <script type="module" src="/src/main.ts"></script>
 </body>
 </html>
