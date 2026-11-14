@@ -14,10 +14,10 @@ export function mountTimeline(
   root.innerHTML = `
     <div class="mb-2 flex items-end justify-between">
       <div>
-        <h2 class="font-medium text-white">Time-lapse timeline</h2>
-        <p id="date" class="text-xs text-slate-500"></p>
+        <h2 class="font-semibold text-white">Time-lapse timeline</h2>
+        <p id="date" class="text-xs text-slate-400"></p>
       </div>
-      <label class="flex items-center gap-2 text-xs text-slate-500">
+      <label class="flex items-center gap-2 text-xs text-slate-400">
         <span id="fps-val" class="w-10 text-right tabular-nums">2 fps</span>
         <input id="fps" type="range" min="1" max="5" value="2" style="--p:25%" class="smooth w-28">
       </label>
@@ -25,12 +25,12 @@ export function mountTimeline(
 
     <input id="scrub" type="range" min="0" max="${last * 1000}" step="1" value="0" class="smooth w-full">
 
-    <div class="mt-2 flex items-center justify-between text-sm text-slate-500">
+    <div class="mt-3 flex items-center justify-between text-sm text-slate-400">
       <span>${epochs[0]}</span>
-      <div class="flex items-center gap-6 text-base text-slate-300">
-        <button id="prev" class="px-2 py-1 transition hover:text-white">Previous</button>
-        <button id="play" class="w-24 rounded-full bg-violet-500 py-2 text-white transition hover:bg-violet-400 active:scale-95">Play</button>
-        <button id="next" class="px-2 py-1 transition hover:text-white">Next</button>
+      <div class="flex items-center gap-4 text-lg">
+        <button id="prev" class="rounded-2xl border border-slate-700 px-6 py-3 text-slate-100 transition-colors hover:border-emerald-400 hover:text-emerald-400 active:scale-95">Previous</button>
+        <button id="play" class="w-36 rounded-2xl bg-emerald-400 py-3 font-semibold text-slate-950 transition-colors hover:bg-emerald-300 active:scale-95">Play</button>
+        <button id="next" class="rounded-2xl border border-slate-700 px-6 py-3 text-slate-100 transition-colors hover:border-emerald-400 hover:text-emerald-400 active:scale-95">Next</button>
       </div>
       <span>${epochs[last]}</span>
     </div>`;
