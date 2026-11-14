@@ -141,7 +141,23 @@
       <section aria-labelledby="map-heading" class="relative h-[100svh] min-h-[32rem] bg-slate-950">
         <h1 id="map-heading" class="sr-only">Explore the Infrared Sky</h1>
         <div id="sky-map" class="h-full w-full"></div>
-        <div role="status" class="absolute bottom-4 left-4 right-4 z-10 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-700/70 bg-slate-950/85 px-4 py-3 text-sm text-slate-100 backdrop-blur sm:left-6 sm:right-auto sm:max-w-xl">
+  <div id="main-controls">
+    <div class="absolute bottom-4 left-4 right-24 z-10 rounded-xl bg-slate-950/85 p-3 text-sm backdrop-blur sm:left-6">
+      <label for="main-epoch">Observation time</label> <a href="#spherex-heading" class="ml-2 text-emerald-300 underline">View images ↓</a>
+      <output id="main-epoch-value" for="main-epoch" class="float-right">Select a sky position</output>
+      <input id="main-epoch" type="range" disabled min="0" max="0" step="1" value="0" class="mt-2 block h-8 w-full accent-emerald-400" />
+      <div class="flex justify-between text-xs text-slate-400"><span>Older</span><span>Newer</span></div>
+    </div>
+    <div class="absolute bottom-4 right-3 z-10 flex max-h-[55svh] w-16 flex-col items-center gap-2 rounded-xl bg-slate-950/85 px-2 py-3 text-xs backdrop-blur">
+      <label for="main-band">IR band</label>
+      <span aria-hidden="true">Longer</span>
+      <input id="main-band" type="range" disabled min="0" max="0" step="1" value="0" class="w-8 min-h-16 flex-1 accent-emerald-400" style="writing-mode:vertical-lr;direction:rtl;height:24svh" />
+      <span aria-hidden="true">Shorter</span>
+      <output id="main-band-value" for="main-band" class="break-words text-center">Select a position</output>
+    </div>
+  </div>
+
+        <div role="status" class="absolute bottom-28 left-4 right-24 z-10 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-700/70 bg-slate-950/85 px-4 py-3 text-sm text-slate-100 backdrop-blur sm:left-6 sm:right-auto sm:max-w-xl">
           <span id="status-text">Click anywhere on the sky to drop a pin.</span>
           <a id="open-pin-btn" href="/explorer" hidden class="btn border-emerald-400 bg-emerald-400 text-slate-950 hover:bg-emerald-300 hover:text-slate-950">Open in Explorer →</a>
         </div>
