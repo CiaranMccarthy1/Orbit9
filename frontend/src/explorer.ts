@@ -63,8 +63,8 @@ export function initExplorer(): void {
       epoch.addEventListener('change', selectEpoch);
       band.addEventListener('change', () => void render());
       selectEpoch();
-    } catch {
-      status.textContent = 'Could not retrieve SPHEREx observations. The data service may be unavailable; please try again.';
+    } catch (error) {
+      status.textContent = error instanceof Error ? error.message : 'Could not retrieve SPHEREx observations.';
     }
   }
   void load();

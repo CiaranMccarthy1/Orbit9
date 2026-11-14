@@ -12,6 +12,7 @@ import A from 'aladin-lite';
 import { DRAG_THRESHOLD_PX, EXPLORER_PATH, MAP_START, SKY_SURVEY } from './config';
 import { byId } from './dom';
 import { buildExplorerUrl } from './urlState';
+import { showSpherexImages } from './spherex';
 
 /** Default FoV (deg) passed to Explorer so it starts inside the <= 1.0° SPHEREx LoD threshold. */
 const EXPLORER_DEFAULT_FOV = 0.5;
@@ -124,6 +125,7 @@ export function initSkyMap(): void {
 
         const [ra, dec] = position as [number, number];
         pinnedCoords = { ra, dec };
+        void showSpherexImages(ra, dec);
 
         pinLayer.removeAll();
         pinLayer.addSources([A.source(ra, dec, { name: 'Pinned Target' })]);

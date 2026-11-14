@@ -13,7 +13,7 @@ export const BRAND = 'Orbit9';
 export const EXPLORER_PATH = '/explorer';
 
 /** Background sky survey (a CDS HiPS id). */
-export const SKY_SURVEY = 'P/allWISE/color';
+export const SKY_SURVEY = 'CDS/P/allWISE/color';
 
 /**
  * Where the sky map starts: a wide view near the Galactic Centre.
