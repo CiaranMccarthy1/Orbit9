@@ -1,4 +1,6 @@
 import os
+import logging
+import threading
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -7,7 +9,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from app import config
-from app.database import init_db
+from app.database import init_db, engine, SessionLocal
+from app.models import Discovery, Render, utcnow
 from app.api import routes_combine, routes_frames, routes_render, routes_targets, routes_users, routes_discoveries
 from app.scripts.seed import seed_targets
 
@@ -26,7 +29,28 @@ for _d in ("fits_raw", "png_renders"):
 async def lifespan(app):
     init_db()
     seed_targets()
-    yield
+    logging.getLogger("uvicorn.error").info("Database: %s host=%s database=%s", engine.url.get_backend_name(),
+                                            engine.url.host or "local", engine.url.database)
+    routes_users.cleanup_sessions()
+    with SessionLocal() as db:
+        # Recover old null/failed classifications from versions without retry metadata.
+        for row in db.query(Discovery).filter(Discovery.retry_at.is_(None)):
+            if row.classification is None or row.classification.get("error"):
+                row.retry_at = utcnow()
+        for row in db.query(Render):
+            if not Path(config.STORAGE_DIR, "png_renders", f"{row.key}.png").exists():
+                db.delete(row)
+        db.commit()
+    stop = threading.Event()
+    worker = threading.Thread(target=routes_discoveries.classification_worker, args=(stop,), daemon=True)
+    worker.start()
+    try:
+        yield
+    finally:
+        stop.set()
+        routes_discoveries.work_available.set()
+        # In-flight work retains its database lease if the process exits.
+        worker.join(timeout=1)
 
 
 app = FastAPI(title="Planet X API", version="0.1.0", lifespan=lifespan)

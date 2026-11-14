@@ -12,4 +12,4 @@ DATABASE_URL = env("DATABASE_URL", f"sqlite:///{STORAGE_DIR}/app.db")
 MAX_RAW_GB = float(env("MAX_RAW_GB", "10"))
 # png_renders cap; same LRU policy for the much smaller rendered images
 MAX_PNG_GB = float(env("MAX_PNG_GB", "2"))
-CORS_ORIGINS = [o for o in env("CORS_ORIGINS", "http://localhost:5173").split(",") if o]
+CORS_ORIGINS = [o.strip() for o in env("CORS_ORIGINS", "http://localhost:5173").split(",") if o.strip()]

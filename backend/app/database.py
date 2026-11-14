@@ -13,9 +13,16 @@ SessionLocal = sessionmaker(bind=engine)
 
 
 def init_db():
-    Base.metadata.create_all(engine)
-    # No migration tool here: add columns introduced after the first release.
-    columns = {c["name"] for c in inspect(engine).get_columns("discoveries")}
-    if "classification" not in columns:
-        with engine.begin() as conn:
-            conn.execute(text("ALTER TABLE discoveries ADD COLUMN classification JSON"))
+    with engine.begin() as conn:
+        if conn.dialect.name == "sqlite":
+            conn.execute(text("BEGIN IMMEDIATE"))
+        elif conn.dialect.name == "postgresql":
+            conn.execute(text("SELECT pg_advisory_xact_lock(73918420)"))
+        Base.metadata.create_all(conn)
+        columns = {c["name"] for c in inspect(conn).get_columns("discoveries")}
+        for name, sql_type in (("classification", "JSON"), ("epochs", "JSON"),
+                               ("retry_at", "TIMESTAMP WITH TIME ZONE")):
+            if name not in columns:
+                conn.execute(text(f"ALTER TABLE discoveries ADD COLUMN {name} {sql_type}"))
+        conn.execute(text("CREATE INDEX IF NOT EXISTS ix_discoveries_position ON discoveries (dec, ra)"))
+        conn.execute(text("CREATE INDEX IF NOT EXISTS ix_discoveries_retry ON discoveries (retry_at)"))

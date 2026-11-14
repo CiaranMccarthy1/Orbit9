@@ -6,16 +6,16 @@ Interactive viewer for NASA/IPAC IRSA SPHEREx sky data.
 
 ### Docker (recommended)
 
-First build (host network avoids a container-DNS timeout on PyPI):
+Build once (Compose uses the host network for the API build to avoid the PyPI DNS timeout):
 
 ```bash
-sudo docker build --network host --allow network.host -t orbit9-api ./backend
+sudo docker compose build
 ```
 
 Then run:
 
 ```bash
-sudo docker compose up --build
+sudo docker compose up -d --no-build
 ```
 
 Web: http://localhost:8080 · API: http://localhost:8000 · docs: http://localhost:8000/docs
@@ -27,8 +27,9 @@ API on the same origin. A cold SPHEREx render can take a couple of minutes.
 
 ```bash
 cd backend
+cp ../.env.example .env
 uv sync
-uv run uvicorn app.main:app --reload --port 8000
+uv run --env-file .env uvicorn app.main:app --reload --port 8000
 ```
 
 Uses SQLite in `backend/storage/` by default.
@@ -74,7 +75,7 @@ Every IRSA URL parameter is validated against `https://irsa.ipac.caltech.edu/ibe
 Rendered PNGs are served at `/storage/png_renders/{sha1}.png`.
 
 ## Curl examples
-
+The first claim within 1 arcsecond wins. RA and Dec work like
 ```bash
 curl localhost:8000/health
 curl localhost:8000/targets
@@ -97,10 +98,32 @@ curl -G localhost:8000/photometry --data-urlencode "ra=269.452" \
 
 ## Config
 
-Copy `.env.example` and adjust: `DATABASE_URL`, `STORAGE_DIR`, `CORS_ORIGINS`,
-`MAX_RAW_GB`, `MAX_PNG_GB`.
+Copy `.env.example` to `backend/.env` for local development. Always launch with
+`uv run --env-file .env ...`; the app does not implicitly load dotenv files.
+Adjust `DATABASE_URL`, `STORAGE_DIR`, `CORS_ORIGINS`, `MAX_RAW_GB`, `MAX_PNG_GB`.
+SQLite defaults to `backend/storage/app.db` when started from `backend/`.
+Startup logs the resolved database backend, host and database, without credentials.
+Compose explicitly uses Postgres at the Docker hostname `db`, and its named storage
+volume; the local SQLite example is not a Docker database override.
+
+Both published ports bind to loopback. For public access, terminate HTTPS on a
+reverse proxy/load balancer in front of `127.0.0.1:8080`, redirect HTTP to HTTPS,
+and keep port 8000 private. Passwords and bearer tokens require HTTPS on public
+networks. nginx limits `/login` and `/register` to 10 requests/minute/IP with a
+burst of 10 (429 when exceeded); school NATs share that budget. Behind another
+proxy, configure nginx real-IP handling only for that trusted proxy so clients
+do not all share its address. Vite is for local development and has no rate limit.
+Expired sessions are removed on login and startup.
 
 ## Accounts and discoveries
+
+Open `/signin` to sign in or create an account. `/login` remains a POST-only API.
+Every page header offers session controls. A signed-out claim returns through
+`/signin?next=...` with its name and coordinates preserved; only local redirect
+paths are accepted. `/catalog`, `/explorer`, and `/signin` are real HTML entries.
+Catalog cards show pending, completed, and retrying classifications. “Load more”
+fetches another 50 claims; search, counts and the observer list cover loaded results.
+`GET /discoveries?limit=50&offset=0` remains a JSON array (maximum limit 100).
 
 Register with `POST /register` and log in with `POST /login`, using JSON
 `{"username":"observer", "password":"at-least-8-characters"}`. Login returns a
@@ -111,11 +134,15 @@ read `GET /discoveries`. The first claim within one arcsecond wins.
 
 ### Candidate classification on submission
 
-Every accepted claim is classified in the background, so `POST /discoveries`
+Every accepted claim persists its optional epoch clicks and is classified by one
+background worker per API process, so `POST /discoveries`
 returns immediately with `"classification": null`. The backend queries IRSA for
 the band files at that position, measures background-subtracted aperture
 photometry, fits a blackbody temperature and molecular absorption indices, and
-stores the result on the discovery. `GET /discoveries` returns it once ready:
+stores the result on the discovery. Failed work is retried after five minutes;
+interrupted work becomes eligible again when its 15-minute lease expires, including
+after restart. No in-memory task backlog or queue service is needed. `GET /discoveries`
+returns results once ready:
 
 ```json
 "classification": {
@@ -126,26 +153,37 @@ stores the result on the discovery. `GET /discoveries` returns it once ready:
 ```
 
 To also fit **parallax and proper motion**, include the positions you clicked in
-each epoch (at least 4 distinct epochs; 3 is fully determined and would report a
-fake parallax):
+each epoch (at least 5 distinct epochs; four exactly fit the four model coefficients
+and cannot expose bad clicks through residuals):
 
 ```json
 {"name": "New world", "ra": 269.452, "dec": 4.693,
  "epochs": [{"mjd": 60903.86, "ra": 269.4520, "dec": 4.6930},
             {"mjd": 61087.12, "ra": 269.4524, "dec": 4.6932},
             {"mjd": 61270.40, "ra": 269.4522, "dec": 4.6931},
-            {"mjd": 61420.63, "ra": 269.4525, "dec": 4.6933}]}
+            {"mjd": 61420.63, "ra": 269.4525, "dec": 4.6933},
+            {"mjd": 61520.63, "ra": 269.4526, "dec": 4.6934}]}
 ```
+
+The browser claim form is **photometric-only**; submit epoch clicks through the API
+for motion/parallax fits. Without clicks the newest two exposures are selected.
+Zero or one usable band produces an insufficient-data label. Flagged or absent
+pixels alone do not establish cosmic-ray evidence, so this pipeline does not label
+them cosmic rays. Fits with residuals above 1 arcsecond are labelled unreliable.
+Confidence numbers are heuristic scores, capped at 0.6 for two usable bands and
+0.9 otherwise; they are not calibrated probabilities.
 
 The classifier is indicative, not publication-grade: it uses broadband detector-array
 files (not 102 spectra) with no photometric calibration. The first submission at a
 position downloads up to 4 × 60 MB FITS files; the classification appears on
 `GET /discoveries` when it finishes.
 
-To reset the database, stop the API first. For local SQLite, remove
-`backend/storage/app.db` and restart the API. For Docker, run
-`docker compose down -v` and then `docker compose up`. These commands delete
-all database records; startup recreates the tables and preset targets.
+Keep the Postgres and storage volumes when restarting. Back up user data before
+any database maintenance; normal build/restart commands do not delete claims.
+FITS downloads are validated before caching. Linux `flock` locks prevent duplicate
+builds and protect active readers. PNG eviction keeps a five-minute grace period
+for recently advertised URLs, so disk caps are soft during active work. Lock files
+are intentionally retained to preserve lock identity across processes.
 
 ### Account and discovery curl tests
 
@@ -177,3 +215,43 @@ curl -i -X POST http://localhost:8000/discoveries \
 curl -i -X POST http://localhost:8000/logout \
   -H "Authorization: Bearer $TOKEN"
 ```
+
+## Checks
+
+```bash
+cd backend
+uv run pytest -q
+uvx pyright app tests
+cd ../frontend
+npm ci
+npm test
+npm run build
+cd ..
+docker compose config
+# Requires Docker daemon permission:
+docker compose build
+docker compose up -d --no-build
+curl -fsS localhost:8000/health
+curl -fsS localhost:8080/ | head
+```
+
+The backend tests cover HTTP auth/status shapes, expiry cleanup, 1″ conflicts,
+concurrent startup/seeding, database retries, spatial prefiltering, pagination,
+cache races/eviction, malformed SIA/FITS input, redirects and classifier decisions.
+Frontend tests use the installed TypeScript compiler and Node test runner (no new
+runtime dependencies): safe redirects, error messages, classification states,
+escaped session names and independent HTML entries.
+
+Browser release checks: disable cache and select Slow 3G, hard-reload `/`, and verify
+the dark background and hidden guide before JS; visit each entry directly; test
+register/duplicate/wrong password/login/logout/expired token; claim after a sign-in
+redirect and test a 1″ conflict; check delayed/error IRSA paths, 390px width, Tab,
+Escape and focus restoration. Use a separate database and verify the test API's
+port before creating any test records. Safari/iOS, speech and live IRSA load need
+separate hardware/network checks.
+
+The original build shipped 2,651 KB JS (863 KB gzip) with the homepage. The split
+build loads about 4.8 KB JS for sign-in and 12 KB for catalog; Aladin remains a
+2,610 KB (848 KB gzip) lazy chunk for maps. nginx compresses JS/CSS/JSON and caches
+hashed assets for one year. `frontend/package.json` is the only npm manifest;
+`frontend/dist` is generated by the build, never an authoritative source.
