@@ -6,8 +6,16 @@ Interactive viewer for NASA/IPAC IRSA SPHEREx sky data.
 
 ### Docker (recommended)
 
+First build (host network avoids a container-DNS timeout on PyPI):
+
 ```bash
-sudo docker compose up --build
+sudo docker build --network host --allow network.host -t orbit9-api ./backend
+```
+
+Then run:
+
+```bash
+sudo docker compose up
 ```
 
 API: http://localhost:8000 · docs: http://localhost:8000/docs
