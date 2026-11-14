@@ -67,9 +67,10 @@ def fit_astrometry(points):
     """points = [(mjd, ra_deg, dec_deg)] -> parallax/PM by sinusoid lstsq.
 
     shortcut: pure sinusoid parallax basis, unweighted, no epoch-uncertainty
-    propagation; >=4 well-spread epochs needed (3 is fully determined).
+    propagation; >=4 well-spread epochs needed (3 is fully determined and
+    would return a fake parallax).
     """
-    if len(points) < 3:
+    if len(points) < 4 or len({p[0] for p in points}) < 4:
         return None
     t = np.array([p[0] for p in points], float)
     ra = np.array([p[1] for p in points], float)
@@ -81,6 +82,8 @@ def fit_astrometry(points):
     tau = (t - t0) / 365.25
     phase = 2 * np.pi * tau
     design = np.column_stack([np.ones_like(tau), tau, np.cos(phase), np.sin(phase)])
+    if np.linalg.matrix_rank(design) < 4:
+        return None  # epochs one year apart share a phase: parallax is unconstrained
     coef_x, *_ = np.linalg.lstsq(design, x, rcond=None)
     coef_y, *_ = np.linalg.lstsq(design, y, rcond=None)
     cx, sx = coef_x[2], coef_x[3]
@@ -141,7 +144,7 @@ def classify(candidate):
 def classify_claim(ra, dec, epochs=()):
     """Fetch SPHEREx bands at the position, measure, fit and classify.
 
-    epochs: clicked positions [{"mjd", "ra", "dec"}] (>=3 enables parallax).
+    epochs: clicked positions [{"mjd", "ra", "dec"}] (>=4 enables parallax).
     """
     exposures = group_exposures(fetch_epochs(ra, dec, SEARCH_RADIUS_DEG))
     if not exposures:
@@ -181,7 +184,7 @@ def classify_claim(ra, dec, epochs=()):
         })
 
     valid = [m for m in measured if m["flux"] > 0 and m["flagged_fraction"] < 0.5]
-    astro = fit_astrometry([(c["mjd"], c["ra"], c["dec"]) for c in clicks]) if len(clicks) >= 3 else None
+    astro = fit_astrometry([(c["mjd"], c["ra"], c["dec"]) for c in clicks]) if len(clicks) >= 4 else None
     wavelengths = [m["center_um"] for m in valid]
     fluxes = [m["flux"] for m in valid]
     t_eff = fit_blackbody_temp(wavelengths, fluxes) if len(valid) >= 2 else None

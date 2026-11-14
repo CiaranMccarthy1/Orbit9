@@ -1,6 +1,6 @@
 import math
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from pydantic import BaseModel, Field
 from sqlalchemy import text
 
@@ -22,7 +22,7 @@ class Claim(BaseModel):
     name: str = Field(min_length=1, max_length=120)
     ra: float = Field(ge=0, le=360, allow_inf_nan=False)
     dec: float = Field(ge=-90, le=90, allow_inf_nan=False)
-    # clicked position per epoch; >=3 enables the parallax/proper-motion fit
+    # clicked position per epoch; >=4 enables the parallax/proper-motion fit
     epochs: list[EpochClick] = Field(default_factory=list, max_length=50)
 
 
@@ -35,7 +35,22 @@ def separation(ra1, dec1, ra2, dec2):
 
 def serialize(discovery, username):
     return {"id": discovery.id, "name": discovery.name, "ra": discovery.ra,
-            "dec": discovery.dec, "discovered_by": username, "discovered_at": discovery.discovered_at}
+            "dec": discovery.dec, "discovered_by": username,
+            "discovered_at": discovery.discovered_at,
+            "classification": discovery.classification}
+
+
+def classify_and_store(discovery_id, ra, dec, epochs):
+    """Slow IRSA work, run after the response; result is saved for GET /discoveries."""
+    try:
+        result = classify_claim(ra, dec, epochs)
+    except Exception as e:
+        result = {"classification": "Unclassified", "error": str(e)}
+    with SessionLocal() as db:
+        discovery = db.get(Discovery, discovery_id)
+        if discovery:
+            discovery.classification = result
+            db.commit()
 
 
 @router.get("/discoveries")
@@ -45,7 +60,7 @@ def discoveries():
 
 
 @router.post("/discoveries", status_code=201)
-def claim(data: Claim, session=Depends(current_session)):
+def claim(data: Claim, background: BackgroundTasks, session=Depends(current_session)):
     name = data.name.strip()
     if not name:
         raise HTTPException(422, "Name cannot be blank")
@@ -65,10 +80,7 @@ def claim(data: Claim, session=Depends(current_session)):
         db.commit()
         db.refresh(discovery)
         result = serialize(discovery, session[1])
-    # classification is advisory enrichment, outside the claim transaction
-    try:
-        result["classification"] = classify_claim(
-            result["ra"], result["dec"], [e.model_dump() for e in data.epochs])
-    except Exception as e:
-        result["classification"] = {"classification": "Unclassified", "error": str(e)}
+    # Classification can take minutes; do it after responding and store the result.
+    background.add_task(classify_and_store, result["id"], result["ra"],
+                        result["dec"], [e.model_dump() for e in data.epochs])
     return result

@@ -16,8 +16,17 @@ def test_fit_astrometry_recovers_parallax_and_pm():
     assert abs(fit["pm_arcsec_yr"] - 2.0) < 0.1
 
 
-def test_fit_astrometry_needs_three_epochs():
-    assert fit_astrometry([(60000, 10.0, 20.0), (60100, 10.1, 20.1)]) is None
+def test_fit_astrometry_needs_four_distinct_epochs():
+    # 3 points fully determine the 4-parameter fit, so it must not report one
+    assert fit_astrometry([(60000, 10.0, 20.0), (60100, 10.1, 20.1),
+                           (60200, 10.2, 20.2)]) is None
+    assert fit_astrometry([(60000, 10.0, 20.0), (60000, 10.1, 20.1),
+                           (60100, 10.2, 20.2), (60200, 10.3, 20.3)]) is None
+
+
+def test_fit_astrometry_rejects_one_year_spacing():
+    # same phase every year leaves the parallax columns degenerate
+    assert fit_astrometry([(60000.0 + 365.25 * i, 10.0, 20.0) for i in range(4)]) is None
 
 
 def test_fit_blackbody_temp_recovers_hot_and_cold():

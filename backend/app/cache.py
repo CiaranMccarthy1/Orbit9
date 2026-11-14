@@ -23,6 +23,19 @@ def evict_old_fits():
         p.unlink(missing_ok=True)
 
 
+def evict_old_pngs():
+    """Delete least-recently-used PNGs until png_renders/ is under MAX_PNG_GB."""
+    if config.MAX_PNG_GB <= 0:
+        return
+    renders = Path(config.STORAGE_DIR, "png_renders")
+    files = sorted(renders.glob("*.png"), key=lambda p: p.stat().st_mtime)
+    total = sum(p.stat().st_size for p in files)
+    while files and total > config.MAX_PNG_GB * 1e9:
+        p = files.pop(0)
+        total -= p.stat().st_size
+        p.unlink(missing_ok=True)
+
+
 def ensure_fits(url):
     path = Path(config.STORAGE_DIR, "fits_raw", f"{url_key(url)}.fits")
     if path.exists():
@@ -41,7 +54,9 @@ def ensure_render(key, png_path, build):
     with SessionLocal() as db:
         hit = db.get(Render, key)
     if hit and png_path.exists():
+        png_path.touch()  # refresh LRU age
         return f"/storage/png_renders/{png_path.name}", True
+    evict_old_pngs()
     build()
     with SessionLocal() as db:
         db.merge(Render(key=key))

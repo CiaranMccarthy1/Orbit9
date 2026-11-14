@@ -7,7 +7,11 @@ RUN uv sync --frozen --no-dev --no-install-project
 
 COPY app ./app
 
-# non-root so bind-mounted storage/ stays owned by the host user
+# named volume for the FITS/PNG cache; Docker seeds an empty volume with this
+# ownership, so the non-root user can write to it on first run
+RUN mkdir -p /app/storage/fits_raw /app/storage/png_renders \
+    && chown -R 1000:1000 /app/storage
+
 ENV HOME=/tmp UV_CACHE_DIR=/tmp/uv-cache
 USER 1000:1000
 

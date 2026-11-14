@@ -12,8 +12,12 @@ export const BRAND = 'Orbit9';
 /** Page that opens when a visitor chooses "Open in Explorer". */
 export const EXPLORER_PATH = '/explorer';
 
-/** Background sky survey (a CDS HiPS id). */
-export const SKY_SURVEY = 'CDS/P/allWISE/color';
+/**
+ * Background sky survey: allWISE color on the ESASky mirror.
+ * The CDS master URL currently returns its "Page unavailable" 404, and Aladin
+ * takes the first URL from MOCServer, so give it the working mirror directly.
+ */
+export const SKY_SURVEY = 'https://skies.esac.esa.int/AllWISEColor';
 
 /**
  * Where the sky map starts: a wide view near the Galactic Centre.

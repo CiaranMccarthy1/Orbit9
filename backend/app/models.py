@@ -55,3 +55,5 @@ class Discovery(Base):
     dec: Mapped[float] = mapped_column(Float)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
     discovered_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    # filled in the background after the claim is accepted
+    classification: Mapped[dict | None] = mapped_column(JSON, nullable=True)

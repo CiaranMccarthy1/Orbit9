@@ -13,6 +13,7 @@ import { DRAG_THRESHOLD_PX, EXPLORER_PATH, MAP_START, SKY_SURVEY } from './confi
 import { byId } from './dom';
 import { buildExplorerUrl } from './urlState';
 import { showSpherexImages } from './spherex';
+import { surveyReachable } from './survey';
 
 /** Default FoV (deg) passed to Explorer so it starts inside the <= 1.0° SPHEREx LoD threshold. */
 const EXPLORER_DEFAULT_FOV = 0.5;
@@ -48,8 +49,18 @@ export function initSkyMap(): void {
   const statusText = byId('status-text');
   const openPinLink = byId<HTMLAnchorElement>('open-pin-btn');
 
+  const showMapUnavailable = () => {
+    mapElement.innerHTML = `
+      <div class="flex h-full flex-col items-center justify-center p-6 text-center">
+        <p class="font-display text-base font-semibold text-white">Interactive sky map unavailable</p>
+        <p class="mt-1 max-w-md text-sm text-slate-400">Your browser or network blocked the sky survey tiles. You can still jump directly into the explorer.</p>
+        <a href="${EXPLORER_PATH}" class="btn mt-4 border-emerald-400 text-emerald-400">Open Explorer →</a>
+      </div>`;
+  };
+
   A.init
-    .then(() => {
+    .then(async () => {
+      if (!(await surveyReachable())) return showMapUnavailable();
       const aladin: any = A.aladin('#sky-map', {
         survey: SKY_SURVEY,
         fov: MAP_START.fov,
@@ -136,13 +147,6 @@ export function initSkyMap(): void {
         openPinLink.hidden = false;
       });
     })
-    .catch(() => {
-      // Tiles or the script were blocked: still give visitors a way forward.
-      mapElement.innerHTML = `
-        <div class="flex h-full flex-col items-center justify-center p-6 text-center">
-          <p class="font-display text-base font-semibold text-white">Interactive sky map unavailable</p>
-          <p class="mt-1 max-w-md text-sm text-slate-400">Your browser or network blocked the sky survey tiles. You can still jump directly into the explorer.</p>
-          <a href="${EXPLORER_PATH}" class="btn mt-4 border-emerald-400 text-emerald-400">Open Explorer →</a>
-        </div>`;
-    });
+    // Tiles or the script were blocked: still give visitors a way forward.
+    .catch(showMapUnavailable);
 }

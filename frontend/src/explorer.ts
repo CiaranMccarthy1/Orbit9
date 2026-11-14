@@ -2,6 +2,7 @@ import { API_BASE, fetchJson } from './api';
 import A from 'aladin-lite';
 import { SKY_SURVEY } from './config';
 import { readExplorerUrlState } from './urlState';
+import { surveyReachable } from './survey';
 
 interface Band { url: string; array: number; em_min_um: number; em_max_um: number }
 interface Exposure { t_iso: string; bands: Band[] }
@@ -55,6 +56,7 @@ export function initExplorer(): void {
     if (fallbackStarted) return;
     fallbackStarted = true;
     try {
+      if (!(await surveyReachable())) throw new Error('survey unavailable');
       await A.init;
       A.aladin('#fallback-map', {
         survey: SKY_SURVEY,

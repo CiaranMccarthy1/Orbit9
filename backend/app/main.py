@@ -1,3 +1,4 @@
+import os
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -12,7 +13,13 @@ from app.scripts.seed import seed_targets
 
 # StaticFiles validates directory existence at mount time, before lifespan runs
 for _d in ("fits_raw", "png_renders"):
-    Path(config.STORAGE_DIR, _d).mkdir(parents=True, exist_ok=True)
+    _path = Path(config.STORAGE_DIR, _d)
+    _path.mkdir(parents=True, exist_ok=True)
+    if not os.access(_path, os.W_OK):
+        raise RuntimeError(
+            f"{_path} is not writable by uid {os.getuid()}. "
+            f"Run: sudo chown -R {os.getuid()}:{os.getgid()} {config.STORAGE_DIR}"
+        )
 
 
 @asynccontextmanager

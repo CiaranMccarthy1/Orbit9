@@ -15,10 +15,13 @@ sudo docker build --network host --allow network.host -t orbit9-api ./backend
 Then run:
 
 ```bash
-sudo docker compose up
+sudo docker compose up --build
 ```
 
-API: http://localhost:8000 · docs: http://localhost:8000/docs
+Web: http://localhost:8080 · API: http://localhost:8000 · docs: http://localhost:8000/docs
+
+The `web` service builds the frontend and serves it with nginx, proxying the
+API on the same origin. A cold SPHEREx render can take a couple of minutes.
 
 ### Local dev (no Docker)
 
@@ -29,6 +32,12 @@ uv run uvicorn app.main:app --reload --port 8000
 ```
 
 Uses SQLite in `backend/storage/` by default.
+
+If `backend/storage` was created by an earlier `sudo docker` run, take it back once:
+
+```bash
+sudo chown -R $(id -u):$(id -g) backend/storage
+```
 
 ### Frontend dev
 
@@ -47,7 +56,7 @@ Set `VITE_API_BASE_URL` to point at a different backend.
 |---|---|---|
 | `GET /health` | liveness | — |
 | `GET /targets` | preset sky targets | — |
-| `GET /frames?ra&dec&radius` | observation epochs covering a position | — |
+| `GET /frames?ra&dec&radius` | observation epochs covering a position (cached 24 h) | — |
 | `GET /render?url=...` | IRSA SPHEREx FITS → stretched PNG | — |
 | `GET /combine?mode=diff\|coadd\|stack&urls=...` | epoch subtraction / stacking / band sums → PNG | — |
 | `GET /rgb?r&g&b` | three bands → false-colour composite | — |
@@ -88,7 +97,8 @@ curl -G localhost:8000/photometry --data-urlencode "ra=269.452" \
 
 ## Config
 
-Copy `.env.example` and adjust: `DATABASE_URL`, `STORAGE_DIR`, `CORS_ORIGINS`.
+Copy `.env.example` and adjust: `DATABASE_URL`, `STORAGE_DIR`, `CORS_ORIGINS`,
+`MAX_RAW_GB`, `MAX_PNG_GB`.
 
 ## Accounts and discoveries
 
@@ -101,10 +111,11 @@ read `GET /discoveries`. The first claim within one arcsecond wins.
 
 ### Candidate classification on submission
 
-Every accepted claim is classified before responding. The backend queries IRSA
-for the band files at that position, measures background-subtracted aperture
+Every accepted claim is classified in the background, so `POST /discoveries`
+returns immediately with `"classification": null`. The backend queries IRSA for
+the band files at that position, measures background-subtracted aperture
 photometry, fits a blackbody temperature and molecular absorption indices, and
-returns:
+stores the result on the discovery. `GET /discoveries` returns it once ready:
 
 ```json
 "classification": {
@@ -115,18 +126,21 @@ returns:
 ```
 
 To also fit **parallax and proper motion**, include the positions you clicked in
-each epoch (at least 3):
+each epoch (at least 4 distinct epochs; 3 is fully determined and would report a
+fake parallax):
 
 ```json
 {"name": "New world", "ra": 269.452, "dec": 4.693,
  "epochs": [{"mjd": 60903.86, "ra": 269.4520, "dec": 4.6930},
             {"mjd": 61087.12, "ra": 269.4524, "dec": 4.6932},
-            {"mjd": 61270.40, "ra": 269.4522, "dec": 4.6931}]}
+            {"mjd": 61270.40, "ra": 269.4522, "dec": 4.6931},
+            {"mjd": 61420.63, "ra": 269.4525, "dec": 4.6933}]}
 ```
 
 The classifier is indicative, not publication-grade: it uses broadband detector-array
 files (not 102 spectra) with no photometric calibration. The first submission at a
-position downloads up to 4 × 60 MB FITS files (minutes); repeats are cached.
+position downloads up to 4 × 60 MB FITS files; the classification appears on
+`GET /discoveries` when it finishes.
 
 To reset the database, stop the API first. For local SQLite, remove
 `backend/storage/app.db` and restart the API. For Docker, run
