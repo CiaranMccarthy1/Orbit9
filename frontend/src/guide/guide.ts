@@ -12,6 +12,7 @@
  * id in index.html means updating this file too; byId() throws if it is missing.
  */
 import { byId } from '../dom';
+import { STORAGE_KEYS } from '../config';
 import { AUDIO_MODE_LABELS, cycleAudioMode, getAudioMode, playChime, unlockAudio } from '../sound';
 import { cycleVoice, isSpeechSupported, previewVoice, speak, stopSpeaking } from '../speech';
 import { lessons, type Hotspot } from './lessons';
@@ -134,6 +135,7 @@ function openGuide({ showStartScreen }: { showStartScreen: boolean }): void {
 }
 
 function closeGuide(): void {
+  try { localStorage.setItem(STORAGE_KEYS.guideSeen, '1'); } catch { /* Storage may be unavailable. */ }
   stopSpeaking();
   playChime(CHIME.close, 0.12);
   el.startScreen.hidden = true;
@@ -233,5 +235,9 @@ export function initGuide(): void {
   });
 
   updateSoundButton();
-  openGuide({ showStartScreen: true });
+  try {
+    if (!localStorage.getItem(STORAGE_KEYS.guideSeen)) openGuide({ showStartScreen: true });
+  } catch {
+    openGuide({ showStartScreen: true });
+  }
 }

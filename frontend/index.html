@@ -121,38 +121,33 @@
   </div>
 
   <!-- HOMEPAGE. Made `inert` (not clickable or focusable) while the guide is open. -->
-  <div id="app" class="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
-    <header class="mb-8 flex flex-wrap gap-3 items-center justify-between">
-      <a href="/" class="font-display text-lg font-semibold text-white">Orbit<span class="text-emerald-400">9</span></a>
-      <div class="flex flex-wrap items-center gap-3">
-        <button id="replay-guide" type="button" class="btn">Replay guide</button>
-        <a href="/catalog" class="btn">Targets &amp; discoveries</a>
-        <a href="/explorer" class="btn border-emerald-400/60 text-emerald-400">Open explorer</a>
-      </div>
+  <div id="app" class="relative">
+    <header class="absolute inset-x-0 top-0 z-30 border-b border-slate-700/50 bg-[#090d1a]/75 backdrop-blur">
+  <div class="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8">
+    <a href="/" class="flex items-center gap-2.5 font-['Sora'] text-2xl font-bold text-white">
+      <img src="/src/assets/orbit9.svg" class="h-16 w-16 object-contain" alt="Orbit9 home" />
+    </a>
+    <nav class="flex flex-wrap items-center gap-1 text-sm font-medium" aria-label="Primary">
+      <a href="/catalog#how" class="rounded-lg px-3 py-2 hover:text-[#34d399]">How it works</a>
+      <a href="/catalog#targets" class="rounded-lg px-3 py-2 hover:text-[#34d399]">Targets</a>
+      <a href="/catalog#finds" class="rounded-lg px-3 py-2 hover:text-[#34d399]">Student finds</a>
+      <a href="/explorer" class="rounded-lg px-3 py-2 hover:text-[#34d399]">Explorer</a>
+      <button id="replay-guide" type="button" class="rounded-lg px-3 py-2 hover:text-[#34d399]">Replay guide</button>
 <div id="session-ui" class="flex flex-wrap items-center gap-3"><a class="btn" href="/signin">Sign in</a></div>
-    </header>
-
-    <div id="target-bar" class="mb-8 flex flex-wrap gap-2" aria-label="Quick targets"></div>
-
-    <main class="space-y-10">
-     <!-- All-sky infrared map -->
-     <section aria-labelledby="map-heading" class="space-y-4">
-      <div>
-        <p class="text-xs font-semibold uppercase tracking-wider text-emerald-400">NASA/IPAC IRSA • All-Sky Infrared</p>
-        <h2 id="map-heading" class="font-display text-2xl font-bold text-white sm:text-3xl">Explore the Infrared Sky</h2>
-        <p class="mt-1 text-sm text-slate-400">Drag to pan, scroll to zoom, and click any object to drop a pin and query real SPHEREx data.</p>
-      </div>
-
-      <div class="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900">
-        <div id="sky-map" class="h-[28rem] w-full sm:h-[34rem]"></div>
-        <div role="status" class="flex flex-wrap items-center justify-between gap-3 border-t border-slate-800 bg-slate-950/90 px-4 py-3 text-sm text-slate-200">
+    </nav>
+  </div>
+</header>
+    <main>
+      <section aria-labelledby="map-heading" class="relative h-[100svh] min-h-[32rem] bg-slate-950">
+        <h1 id="map-heading" class="sr-only">Explore the Infrared Sky</h1>
+        <div id="sky-map" class="h-full w-full"></div>
+        <div role="status" class="absolute bottom-4 left-4 right-4 z-10 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-700/70 bg-slate-950/85 px-4 py-3 text-sm text-slate-100 backdrop-blur sm:left-6 sm:right-auto sm:max-w-xl">
           <span id="status-text">Click anywhere on the sky to drop a pin.</span>
           <a id="open-pin-btn" href="/explorer" hidden class="btn border-emerald-400 bg-emerald-400 text-slate-950 hover:bg-emerald-300 hover:text-slate-950">Open in Explorer →</a>
         </div>
-      </div>
-    </section>
+      </section>
 
-    <section aria-labelledby="spherex-heading" class="space-y-4">
+    <section aria-labelledby="spherex-heading" class="mx-auto max-w-6xl space-y-4 px-4 py-10 sm:px-6">
       <div>
         <h2 id="spherex-heading" class="font-display text-2xl font-bold text-white">SPHEREx images</h2>
         <p class="text-sm text-slate-400">Select a point on the map to load its latest SPHEREx observation.</p>

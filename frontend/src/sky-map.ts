@@ -65,7 +65,7 @@ export function initSkyMap(): void {
         survey: SKY_SURVEY,
         fov: MAP_START.fov,
         target: MAP_START.target,
-        showCooGrid: true,
+        showCooGrid: false,
         showReticle: true,
         showFullscreenControl: false,
         showSimbadPointerControl: false,
