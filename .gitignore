@@ -1,6 +1,7 @@
-# Python / Backend
-.venv/
-venv/
+.venv
+*node_modules/
+pycache/
+backend/storage/
 __pycache__/
 *.py[cod]
 .pytest_cache/
