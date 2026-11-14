@@ -141,14 +141,16 @@
       <section aria-labelledby="map-heading" class="relative h-[100svh] min-h-[32rem] bg-slate-950">
         <h1 id="map-heading" class="sr-only">Explore the Infrared Sky</h1>
         <div id="sky-map" class="h-full w-full"></div>
-  <div id="main-controls">
-    <div class="absolute bottom-4 left-4 right-24 z-10 rounded-xl bg-slate-950/85 p-3 text-sm backdrop-blur sm:left-6">
+        <img id="main-spherex-frame" hidden class="pointer-events-none absolute inset-0 z-[1] h-full w-full bg-slate-950 object-contain" alt="Selected SPHEREx observation" />
+        <button id="show-sky-map" type="button" hidden class="btn absolute right-24 top-24 z-10 bg-slate-950/85 backdrop-blur">Show sky map</button>
+  <div id="main-controls" class="pointer-events-none absolute inset-0 z-20">
+    <div class="pointer-events-auto absolute bottom-4 left-4 right-24 z-10 rounded-xl bg-slate-950/85 p-3 text-sm backdrop-blur sm:left-6">
       <label for="main-epoch">Observation time</label> <a href="#spherex-heading" class="ml-2 text-emerald-300 underline">View images ↓</a>
       <output id="main-epoch-value" for="main-epoch" class="float-right">Select a sky position</output>
       <input id="main-epoch" type="range" disabled min="0" max="0" step="1" value="0" class="mt-2 block h-8 w-full accent-emerald-400" />
       <div class="flex justify-between text-xs text-slate-400"><span>Older</span><span>Newer</span></div>
     </div>
-    <div class="absolute bottom-4 right-3 z-10 flex max-h-[55svh] w-16 flex-col items-center gap-2 rounded-xl bg-slate-950/85 px-2 py-3 text-xs backdrop-blur">
+    <div class="pointer-events-auto absolute bottom-4 right-3 z-10 flex max-h-[55svh] w-16 flex-col items-center gap-2 rounded-xl bg-slate-950/85 px-2 py-3 text-xs backdrop-blur">
       <label for="main-band">IR band</label>
       <span aria-hidden="true">Longer</span>
       <input id="main-band" type="range" disabled min="0" max="0" step="1" value="0" class="w-8 min-h-16 flex-1 accent-emerald-400" style="writing-mode:vertical-lr;direction:rtl;height:24svh" />

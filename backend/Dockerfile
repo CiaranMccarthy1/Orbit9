@@ -1,6 +1,10 @@
 FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim
 WORKDIR /app
 
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY pyproject.toml uv.lock ./
 ENV UV_HTTP_TIMEOUT=120
 RUN uv sync --frozen --no-dev --no-install-project

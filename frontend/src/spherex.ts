@@ -18,6 +18,9 @@ export async function showSpherexImages(ra: number, dec: number, renderInitial =
   const date = byId('main-epoch-value');
   const wavelength = byId('main-band-value');
   const images = byId('spherex-images');
+  const mainFrame = byId<HTMLImageElement>('main-spherex-frame');
+  const showSkyMap = byId<HTMLButtonElement>('show-sky-map');
+  showSkyMap.onclick = () => { mainFrame.hidden = true; showSkyMap.hidden = true; };
   epoch.disabled = bandSlider.disabled = true;
   date.textContent = wavelength.textContent = 'Loading…';
   epoch.oninput = bandSlider.oninput = null;
@@ -31,6 +34,7 @@ export async function showSpherexImages(ra: number, dec: number, renderInitial =
     exposures.sort((a, b) => a.t_iso.localeCompare(b.t_iso));
     for (const exposure of exposures) exposure.bands.sort((a, b) => a.em_min_um - b.em_min_um);
     if (!exposures.length) {
+      mainFrame.hidden = showSkyMap.hidden = true;
       date.textContent = wavelength.textContent = 'No observations';
       status.textContent = 'No SPHEREx observations cover this position.';
       return;
@@ -63,7 +67,7 @@ export async function showSpherexImages(ra: number, dec: number, renderInitial =
       bandSlider.setAttribute('aria-valuetext', wavelength.textContent);
       return selected;
     };
-    const draw = async (bands: Band[], active: number) => {
+    const draw = async (bands: Band[], active: number, mainBand?: Band) => {
       const isCurrent = () => current === request && active === render;
       if (!isCurrent()) return;
       images.replaceChildren();
@@ -81,7 +85,22 @@ export async function showSpherexImages(ra: number, dec: number, renderInitial =
         images.append(card);
         try {
           const result = await fetchJson<{ png: string }>(`/render?${new URLSearchParams({ url: band.url })}`);
-          if (isCurrent()) image.src = new URL(result.png, API_BASE ? new URL(API_BASE, location.origin) : location.origin).href;
+          if (isCurrent()) {
+            const src = new URL(result.png, API_BASE ? new URL(API_BASE, location.origin) : location.origin).href;
+            image.src = src;
+            if (band === mainBand) {
+              const preview = new Image();
+              preview.onload = () => {
+                if (!isCurrent()) return;
+                mainFrame.src = src;
+                mainFrame.alt = `${observation} · ${caption.textContent}`;
+                mainFrame.hidden = false;
+                showSkyMap.hidden = false;
+              };
+              preview.onerror = () => { if (isCurrent()) status.textContent = 'Could not load the selected SPHEREx image.'; };
+              preview.src = src;
+            }
+          }
         } catch (error) {
           if (isCurrent()) caption.textContent += ` · ${error instanceof Error ? error.message : 'image unavailable'}`;
         }
@@ -93,16 +112,17 @@ export async function showSpherexImages(ra: number, dec: number, renderInitial =
       window.clearTimeout(timer);
       const selected = updateLabels(timeChanged);
       images.replaceChildren();
-      status.textContent = 'Loading selected SPHEREx image below the map…';
-      timer = window.setTimeout(() => void draw(selected ? [selected] : [], active), 180);
+      status.textContent = 'Loading selected SPHEREx image…';
+      timer = window.setTimeout(() => void draw(selected ? [selected] : [], active, selected), 180);
     };
     epoch.oninput = () => select(true);
     bandSlider.oninput = () => select(false);
     updateLabels(true);
-    if (renderInitial) await draw(selectedExposure().bands, ++render);
+    if (renderInitial) await draw(selectedExposure().bands, ++render, updateLabels(false));
     else status.textContent = 'Use the time and IR sliders to load images for the starting sky position, or select a point on the map.';
   } catch (error) {
     if (current === request) {
+      mainFrame.hidden = showSkyMap.hidden = true;
       date.textContent = wavelength.textContent = 'Unavailable';
       status.textContent = error instanceof Error ? error.message : 'Could not retrieve SPHEREx images.';
     }

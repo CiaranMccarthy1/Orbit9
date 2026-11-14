@@ -69,6 +69,7 @@ test('homepage sliders request the selected observation and wavelength', async (
     getElementById: id => { if (!elements.has(id)) elements.set(id, node()); return elements.get(id); },
     createElement: node,
   };
+  globalThis.Image = class { set src(value) { this._src=value; this.onload?.(); } get src() { return this._src; } };
   const timers = new Map(); let timerId=0;
   globalThis.window = {setTimeout:fn=>{timers.set(++timerId,fn);return timerId;},clearTimeout:id=>timers.delete(id)};
   globalThis.location = {origin:'http://localhost'};
@@ -88,11 +89,17 @@ test('homepage sliders request the selected observation and wavelength', async (
   assert.equal(renders.length,0);
   const epoch=elements.get('main-epoch'),band=elements.get('main-band');
   assert.equal(epoch.disabled,false);
+  assert.equal(band.disabled,false);
   assert.equal(epoch.value,'1');
   band.value='1';band.oninput();await flush();
   assert.equal(renders.at(-1),'new-long');
   assert.equal(elements.get('spherex-images').children.length,1);
+  assert.equal(elements.get('main-spherex-frame').src,'http://localhost/new-long.png');
+  assert.equal(elements.get('main-spherex-frame').hidden,false);
+  elements.get('show-sky-map').onclick();
+  assert.equal(elements.get('main-spherex-frame').hidden,true);
   epoch.value='0';epoch.oninput();await flush();
+  assert.equal(band.disabled,false);
   assert.equal(renders.at(-1),'old-long');
   await spherex.showSpherexImages(30,40,false);
   finishOld();await flush();
