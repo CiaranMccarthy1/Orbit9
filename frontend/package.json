@@ -4,17 +4,25 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
+  "type": "module",
   "dependencies": {
+    "aladin-lite": "^3.9.2-beta",
     "autoprefixer": "^10.6.2",
     "chart.js": "^4.6.1",
     "postcss": "^8.5.33",
     "tailwindcss": "^4.3.5",
     "vite": "^8.3.8"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.5",
+    "typescript": "^7.0.2"
   }
 }

@@ -3,3 +3,18 @@
 pycache/
 backend/app/pipeline/*
 backend/app/__pycache__/*
+
+# Frontend (Node / Vite / TypeScript)
+node_modules/
+dist/
+dist-ssr/
+*.local
+*.tsbuildinfo
+.eslintcache
+.stylelintcache
+
+# Environment & OS
+.env
+.env.*
+!.env.example
+.DS_Store
