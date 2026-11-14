@@ -7,14 +7,23 @@ from sqlalchemy import text
 from app.api.routes_users import current_session
 from app.database import SessionLocal
 from app.models import Discovery, User
+from app.pipeline.classifier import classify_claim
 
 router = APIRouter()
+
+
+class EpochClick(BaseModel):
+    mjd: float = Field(ge=40000, le=80000, allow_inf_nan=False)
+    ra: float = Field(ge=0, le=360, allow_inf_nan=False)
+    dec: float = Field(ge=-90, le=90, allow_inf_nan=False)
 
 
 class Claim(BaseModel):
     name: str = Field(min_length=1, max_length=120)
     ra: float = Field(ge=0, le=360, allow_inf_nan=False)
     dec: float = Field(ge=-90, le=90, allow_inf_nan=False)
+    # clicked position per epoch; >=3 enables the parallax/proper-motion fit
+    epochs: list[EpochClick] = Field(default_factory=list, max_length=50)
 
 
 def separation(ra1, dec1, ra2, dec2):
@@ -41,7 +50,7 @@ def claim(data: Claim, session=Depends(current_session)):
     if not name:
         raise HTTPException(422, "Name cannot be blank")
     with SessionLocal() as db:
-        dialect = db.bind.dialect.name
+        dialect = db.get_bind().dialect.name
         if dialect == "sqlite":
             db.execute(text("BEGIN IMMEDIATE"))
         elif dialect == "postgresql":
@@ -55,4 +64,11 @@ def claim(data: Claim, session=Depends(current_session)):
         db.add(discovery)
         db.commit()
         db.refresh(discovery)
-        return serialize(discovery, session[1])
+        result = serialize(discovery, session[1])
+    # classification is advisory enrichment, outside the claim transaction
+    try:
+        result["classification"] = classify_claim(
+            result["ra"], result["dec"], [e.model_dump() for e in data.epochs])
+    except Exception as e:
+        result["classification"] = {"classification": "Unclassified", "error": str(e)}
+    return result

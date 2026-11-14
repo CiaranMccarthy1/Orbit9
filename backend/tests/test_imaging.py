@@ -5,7 +5,7 @@ from PIL import Image
 
 from app.pipeline.combine import combine, crop_common
 from app.pipeline.grouping import array_of
-from app.pipeline.photometry import aperture_median, flag_stats
+from app.pipeline.photometry import aperture_flux, aperture_median, flag_stats
 from app.pipeline.png_renderer import render_png, save_image
 
 WCS_CARDS = dict(CTYPE1="RA---TAN", CTYPE2="DEC--TAN", CUNIT1="deg",
@@ -114,3 +114,15 @@ def test_coadd_disjoint_frames_raises(tmp_path):
     make_fits(tmp_path / "b.fits", b)
     with pytest.raises(ValueError, match="no overlapping coverage"):
         combine("coadd", [tmp_path / "a.fits", tmp_path / "b.fits"], tmp_path / "c.png")
+
+
+def test_aperture_flux_subtracts_background(tmp_path):
+    img = np.full((41, 41), 5.0)
+    yy, xx = np.ogrid[:41, :41]
+    img[(xx - 10) ** 2 + (yy - 10) ** 2 <= 4] = 10.0
+    make_fits(tmp_path / "f.fits", img)
+    m = aperture_flux(tmp_path / "f.fits", 10.0, 20.0, radius_px=2)
+    assert m is not None
+    assert m["flux"] > 0
+    assert m["flagged_fraction"] == 0.0
+    assert m["pixel_area_sr"] > 0

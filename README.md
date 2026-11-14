@@ -88,6 +88,35 @@ to use `GET /me`, `POST /logout`, and `POST /discoveries`. A discovery accepts
 JSON such as `{"name":"New world", "ra":12.3, "dec":-4.5}`. Anyone can
 read `GET /discoveries`. The first claim within one arcsecond wins.
 
+### Candidate classification on submission
+
+Every accepted claim is classified before responding. The backend queries IRSA
+for the band files at that position, measures background-subtracted aperture
+photometry, fits a blackbody temperature and molecular absorption indices, and
+returns:
+
+```json
+"classification": {
+  "classification": "L/T Brown Dwarf",
+  "confidence": 0.9,
+  "measurements": {"t_eff_k": 1450.0, "ch4_depth": 0.31, "n_bands_valid": 2, ...}
+}
+```
+
+To also fit **parallax and proper motion**, include the positions you clicked in
+each epoch (at least 3):
+
+```json
+{"name": "New world", "ra": 269.452, "dec": 4.693,
+ "epochs": [{"mjd": 60903.86, "ra": 269.4520, "dec": 4.6930},
+            {"mjd": 61087.12, "ra": 269.4524, "dec": 4.6932},
+            {"mjd": 61270.40, "ra": 269.4522, "dec": 4.6931}]}
+```
+
+The classifier is indicative, not publication-grade: it uses broadband detector-array
+files (not 102 spectra) with no photometric calibration. The first submission at a
+position downloads up to 4 × 60 MB FITS files (minutes); repeats are cached.
+
 To reset the database, stop the API first. For local SQLite, remove
 `backend/storage/app.db` and restart the API. For Docker, run
 `docker compose down -v` and then `docker compose up`. These commands delete
