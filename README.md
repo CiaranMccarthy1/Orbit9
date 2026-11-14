@@ -39,6 +39,18 @@ Uses SQLite in `backend/storage/` by default.
 | `GET /render?url=...` | IRSA SPHEREx FITS → stretched PNG |
 | `GET /health` | liveness |
 
+## Curl examples
+
+```bash
+curl localhost:8000/health
+curl localhost:8000/targets
+curl "localhost:8000/frames?ra=269.452&dec=4.693&radius=0.05"
+
+URL=$(curl -s "localhost:8000/frames?ra=269.452&dec=4.693&radius=0.05" \
+  | jq -r '.exposures[0].bands[0].url')
+curl --get --data-urlencode "url=$URL" localhost:8000/render
+```
+
 ## Config
 
 Copy `.env.example` and adjust: `DATABASE_URL`, `STORAGE_DIR`, `CORS_ORIGINS`.
