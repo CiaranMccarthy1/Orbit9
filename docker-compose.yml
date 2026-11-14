@@ -1,9 +1,27 @@
 services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      - POSTGRES_USER=orbit9
+      - POSTGRES_PASSWORD=orbit9
+      - POSTGRES_DB=orbit9
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
   api:
-    image: orbit9-api
+    build:
+      context: ./backend
+      network: host
     ports:
       - "8000:8000"
     environment:
+      - DATABASE_URL=postgresql+psycopg://orbit9:orbit9@db:5432/orbit9
       - CORS_ORIGINS=http://localhost:5173
+      - STORAGE_DIR=/app/storage
     volumes:
       - ./backend/storage:/app/storage
+    depends_on:
+      - db
+
+volumes:
+  pgdata:

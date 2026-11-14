@@ -3,3 +3,6 @@
 pycache/
 backend/app/pipeline/*
 backend/app/__pycache__/*
+__pycache__/
+*.py[cod]
+.venv/
