@@ -24,6 +24,9 @@ dist-ssr/
 .eslintcache
 .stylelintcache
 
+# Local scratch notes
+NOTES.md
+
 # Environment & OS
 .env
 .env.*
