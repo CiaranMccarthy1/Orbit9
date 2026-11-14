@@ -7,6 +7,11 @@ services:
       - POSTGRES_DB=orbit9
     volumes:
       - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U orbit9 -d orbit9"]
+      interval: 2s
+      timeout: 3s
+      retries: 15
 
   api:
     build:
@@ -21,7 +26,9 @@ services:
     volumes:
       - ./backend/storage:/app/storage
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+    restart: unless-stopped
 
 volumes:
   pgdata:
