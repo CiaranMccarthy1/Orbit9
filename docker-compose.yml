@@ -15,9 +15,11 @@ services:
 
   api:
     image: orbit9-api
-    build: ./backend
+    build:
+      context: ./backend
+      network: host
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
     environment:
       - DATABASE_URL=postgresql+psycopg://orbit9:orbit9@db:5432/orbit9
       - CORS_ORIGINS=http://localhost:5173
@@ -32,7 +34,7 @@ services:
   web:
     build: ./frontend
     ports:
-      - "8080:80"
+      - "127.0.0.1:8080:80"
     depends_on:
       - api
     restart: unless-stopped
