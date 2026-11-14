@@ -82,3 +82,34 @@ To reset the database, stop the API first. For local SQLite, remove
 `backend/storage/app.db` and restart the API. For Docker, run
 `docker compose down -v` and then `docker compose up`. These commands delete
 all database records; startup recreates the tables and preset targets.
+
+### Account and discovery curl tests
+
+Run against the local API at `http://localhost:8000`:
+
+```bash
+# Register, then log in and save the bearer token
+curl -i -X POST http://localhost:8000/register \
+  -H 'Content-Type: application/json' \
+  -d '{"username":"observer","password":"at-least-8-characters"}'
+TOKEN=$(curl -s -X POST http://localhost:8000/login \
+  -H 'Content-Type: application/json' \
+  -d '{"username":"observer","password":"at-least-8-characters"}' \
+  | jq -r '.access_token')
+
+# Check the authenticated user
+curl -H "Authorization: Bearer $TOKEN" http://localhost:8000/me
+
+# List discoveries (public)
+curl http://localhost:8000/discoveries
+
+# Claim a planet (first claim within 1 arcsecond wins)
+curl -i -X POST http://localhost:8000/discoveries \
+  -H "Authorization: Bearer $TOKEN" \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"New world","ra":12.3,"dec":-4.5}'
+
+# Log out; this invalidates the token
+curl -i -X POST http://localhost:8000/logout \
+  -H "Authorization: Bearer $TOKEN"
+```
