@@ -6,5 +6,12 @@ dependencies = [
     "astroquery>=0.4.11",
     "fastapi>=0.162.7",
     "pillow>=13.0.0",
+    "psycopg[binary]>=3.3.9",
+    "sqlalchemy>=2",
     "uvicorn>=0.54.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.2.0",
 ]
