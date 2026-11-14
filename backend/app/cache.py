@@ -1,6 +1,8 @@
 """Shared FITS + rendered-PNG caching."""
 from pathlib import Path
 
+from fastapi import HTTPException
+
 from app import config
 from app.database import SessionLocal
 from app.models import Render
@@ -27,7 +29,10 @@ def ensure_fits(url):
         path.touch()  # refresh LRU age
     else:
         evict_old_fits()
-        download_fits(url, path)
+        try:
+            download_fits(url, path)
+        except Exception as e:
+            raise HTTPException(502, f"IRSA download failed: {e}") from e
     return path
 
 

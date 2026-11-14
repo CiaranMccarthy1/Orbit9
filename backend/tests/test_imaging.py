@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 from astropy.io import fits
 from PIL import Image
 
@@ -95,12 +96,21 @@ def test_crop_common_trims_to_overlap():
     a = np.full((10, 10), np.nan); a[2:6, 2:6] = 1.0
     b = np.full((10, 10), np.nan); b[4:8, 4:8] = 2.0
     out = crop_common([a, b])
+    assert out is not None
     assert out[0].shape == (2, 2)          # rows/cols 4..5
     assert np.isfinite(out[0]).all() and np.isfinite(out[1]).all()
 
 
-def test_crop_common_no_overlap_returns_unchanged():
+def test_crop_common_no_overlap_returns_none():
     a = np.full((6, 6), np.nan); a[0:2, 0:2] = 1.0
     b = np.full((6, 6), np.nan); b[4:6, 4:6] = 2.0
-    out = crop_common([a, b])
-    assert out[0].shape == (6, 6)
+    assert crop_common([a, b]) is None
+
+
+def test_coadd_disjoint_frames_raises(tmp_path):
+    a = np.full((10, 10), np.nan); a[0:2, 0:2] = 1.0
+    b = np.full((10, 10), np.nan); b[8:10, 8:10] = 2.0
+    make_fits(tmp_path / "a.fits", a)
+    make_fits(tmp_path / "b.fits", b)
+    with pytest.raises(ValueError, match="no overlapping coverage"):
+        combine("coadd", [tmp_path / "a.fits", tmp_path / "b.fits"], tmp_path / "c.png")

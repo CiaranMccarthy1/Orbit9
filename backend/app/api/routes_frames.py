@@ -25,7 +25,10 @@ def frames(ra: float, dec: float, radius: float = 0.1):
         if hit:
             products = hit.products
         else:
-            products = fetch_epochs(ra, dec, radius)
+            try:
+                products = fetch_epochs(ra, dec, radius)
+            except Exception as e:
+                raise HTTPException(502, f"IRSA unavailable: {e}") from e
             # merge: concurrent cache misses race on the same key
             db.merge(FrameCache(key=key, products=products))
             db.commit()
