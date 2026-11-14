@@ -14,7 +14,12 @@ import './styles.css';
 import { initGuide } from './guide/guide';
 import { initSkyMap } from './sky-map';
 import { initTargetBar } from './targetBar';
+import { initExplorer } from './explorer';
 
-initSkyMap();
-initGuide();
-void initTargetBar();
+if (window.location.pathname.replace(/\/$/, '') === '/explorer') {
+  initExplorer();
+} else {
+  initSkyMap();
+  initGuide();
+  void initTargetBar();
+}

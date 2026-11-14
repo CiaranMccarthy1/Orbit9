@@ -30,8 +30,8 @@ export function readExplorerUrlState(): ExplorerUrlState {
   const params = new URLSearchParams(window.location.search);
   const [defaultRa, defaultDec] = MAP_START.target.split(' ').map(Number);
 
-  const ra = Number(params.get('ra'));
-  const dec = Number(params.get('dec'));
+  const ra = params.has('ra') ? Number(params.get('ra')) : defaultRa;
+  const dec = params.has('dec') ? Number(params.get('dec')) : defaultDec;
   const fov = Number(params.get('fov'));
   const mode = params.get('mode');
   const epoch = Number(params.get('epoch'));
